@@ -1,6 +1,7 @@
 #include "stm32f4xx_hal.h"
 
 #include "clock.h"
+#include "led.h"
 
 /**
  * @brief SysTick interrupt, fires every 1 ms. Advances the HAL's millisecond counter.
@@ -29,7 +30,10 @@ int main(void)
     if (!clock_init()) {
         error_halt();
     }
+    led_init();
 
     while (1) {
+        led_toggle();
+        HAL_Delay(500);
     }
 }
