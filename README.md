@@ -58,4 +58,5 @@ buffered in SPI flash while offline, sent over MQTT to a Docker stack
 | [docs/system/firmware.md](docs/system/firmware.md) | The Nucleo firmware: peripherals, store-and-forward, time, screen |
 | [docs/system/server.md](docs/system/server.md) | The Linux host and the Docker stack |
 | [docs/system/deployment.md](docs/system/deployment.md) | Provisioning, releases, CI and the cloud infrastructure |
-| [docs/project-design/decisions.md](docs/project-design/decisions.md) | The design decisions and why |
+| [docs/project-design/decisions.md](docs/project-design/decisions.md) | The log of design decisions, in the order they were made, and why |
+| [docs/project-design/finalised-decisions.md](docs/project-design/finalised-decisions.md) | The decisions in force today, by subject |
