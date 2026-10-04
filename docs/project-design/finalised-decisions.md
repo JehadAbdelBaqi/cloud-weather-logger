@@ -1,7 +1,7 @@
 # Finalised Decisions
 
 The design decisions in force today, by subject. This file is rewritten as
-decisions change; [decisions.md](decisions.md) is the full log, in the order the
+decisions change; [decision_logs.md](decision_logs.md) is the full log, in the order the
 decisions were made, with the alternatives each one was chosen over.
 
 [← README](../../README.md)
@@ -96,4 +96,4 @@ built: the [README](../../README.md) says what exists today.
 |----------|-----|-----|
 | **A read-now button** — a button press takes and sends a reading at once | Timed readings and the `read` command already cover on-demand readings | 16 |
 
-**See also:** [decisions.md](decisions.md) · [architecture.md](../system/architecture.md) · [protocol.md](../system/protocol.md)
+**See also:** [decision_logs.md](decision_logs.md) · [architecture.md](../system/architecture.md) · [protocol.md](../system/protocol.md)
