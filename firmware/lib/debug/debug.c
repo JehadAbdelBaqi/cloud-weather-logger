@@ -24,3 +24,11 @@ void debug_print(const char *text)
 {
     uart_write(&debug_uart, (const uint8_t *)text, strlen(text));
 }
+
+void debug_print_hex(uint8_t value)
+{
+    static const char digits[] = "0123456789ABCDEF";
+    const char text[] = { '0', 'x', digits[value >> 4], digits[value & 0x0F], '\0' };
+
+    debug_print(text);
+}

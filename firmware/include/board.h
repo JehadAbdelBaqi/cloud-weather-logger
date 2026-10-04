@@ -26,4 +26,13 @@
 #define DEBUG_PIN_AF  GPIO_AF7_USART2
 #define DEBUG_BAUD    115200
 
+// BME280 sensor - I2C1, PB8 SCL (Arduino D15) / PB9 SDA (Arduino D14), alternate function 4
+// (UM1724 Table 16, STM32F411xE datasheet DS10314 Table 9)
+#define SENSOR_I2C           I2C1
+#define SENSOR_PORT          GPIOB
+#define SENSOR_SCL_PIN       GPIO_PIN_8
+#define SENSOR_SDA_PIN       GPIO_PIN_9
+#define SENSOR_PIN_AF        GPIO_AF4_I2C1
+#define SENSOR_I2C_SPEED_HZ  100000
+
 #endif

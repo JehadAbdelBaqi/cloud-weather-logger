@@ -50,7 +50,8 @@ only, so the Nucleo can be watched in a serial monitor while the link runs.
 
 ## Sequence numbers
 
-`seq` carries on across reboots and is never reused.
+`seq` counts up from the start each time the Nucleo is switched on. It is not
+kept across a restart.
 
 ## Time
 

@@ -2,6 +2,7 @@
 
 #include "stm32f4xx_hal.h"
 
+#include "bme280.h"
 #include "clock.h"
 #include "config.h"
 #include "debug.h"
@@ -66,6 +67,29 @@ static void handle_received_line(void)
 }
 
 /**
+ * @brief Finds the BME280 and writes its address and chip ID to the debug output.
+ */
+static void show_sensor(void)
+{
+    uint8_t chip_id = 0;
+
+    if (!bme280_init()) {
+        debug_print("BME280 not found\r\n");
+        return;
+    }
+    if (!bme280_read_chip_id(&chip_id)) {
+        debug_print("BME280 found, but its chip ID could not be read\r\n");
+        return;
+    }
+
+    debug_print("BME280 at address ");
+    debug_print_hex(bme280_address());
+    debug_print(", chip ID ");
+    debug_print_hex(chip_id);
+    debug_print("\r\n");
+}
+
+/**
  * @brief Entry point, called by the startup code after reset.
  */
 int main(void)
@@ -83,6 +107,7 @@ int main(void)
     }
 
     debug_print("weather logger started\r\n");
+    show_sensor();
     handshake_init();
 
     while (1) {

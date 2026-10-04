@@ -24,7 +24,7 @@ the bridge: they pass between the Nucleo and the bridge only.
 
 | Field | Type | Unit / scale |
 |-------|------|--------------|
-| `seq` | unsigned integer | Sequence number, never reused (carries on across reboots) |
+| `seq` | unsigned integer | Sequence number; starts again when the Nucleo is switched off and on |
 | `epoch` | unsigned integer | Sample time from the Nucleo's RTC, Unix time in seconds |
 | `t_centi_C` | signed integer | Temperature in hundredths of °C |
 | `p_Pa` | unsigned integer | Pressure in pascals |

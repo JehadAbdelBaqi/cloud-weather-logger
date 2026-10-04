@@ -61,7 +61,7 @@ built: the [README](../../README.md) says what exists today.
 | **Readings are timestamped on the Nucleo by its RTC**, on the on-board 32.768 kHz crystal, set from the bridge's time line | Readings replayed from flash keep their true time | 32 |
 | **While there is no connection, readings are kept in the Nucleo's memory; when that is full, it stops taking readings.** The SPI flash (W25Q64) is a stretch goal | Memory the Nucleo already has covers a short outage with no extra part; the flash module cannot be used until its pins are soldered | 17, 78 |
 | **Store-and-forward is driven by acknowledgements** — a reading is kept until its `seq` is acked, and unacked readings are resent. *Open: how this works with readings held in memory* | Nothing is lost while the link, broker, ingest or database is down; they all look the same to the device | 31 |
-| **`seq` carries on across reboots.** *Open: where the last value is kept, now that the flash is a stretch goal* | A reused `seq` would collide with readings already acknowledged | 34 |
+| **`seq` starts again each time the Nucleo is switched off and on.** *Later: how readings from before and after a restart are told apart* | There is nowhere to keep the last value without the flash | 34, 79 |
 | **A 3.5" ILI9488 screen on the Nucleo, in the core build**, on the SPI bus | Readings and device health are visible with no PC, network or server | 42 |
 
 ## The server
