@@ -17,8 +17,8 @@
 #define LOG_LINES 1
 
 // Handshake with the Nucleo ("H,request" / "H,ack")
-#define HANDSHAKE_RETRY_INTERVAL_MS 1000   // while not connected: how often the request is repeated
-#define HANDSHAKE_CHECK_INTERVAL_MS 20000  // once connected: how often the connection is checked
-#define HANDSHAKE_MISSED_LIMIT      2      // unanswered checks in a row before it counts as lost
+#define HANDSHAKE_REQUEST_INTERVAL_MS 2000  // how often the request is repeated while it goes unanswered
+#define HANDSHAKE_QUIET_LIMIT_MS      5000  // once connected: how long with no line from the Nucleo before asking
+#define HANDSHAKE_MISSED_LIMIT        5     // unanswered requests in a row before the connection counts as lost
 
 #endif

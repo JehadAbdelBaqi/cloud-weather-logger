@@ -3,12 +3,11 @@
 #include "stm32f4xx_hal.h"
 
 #include "clock.h"
+#include "config.h"
 #include "debug.h"
+#include "handshake.h"
 #include "led.h"
 #include "link.h"
-
-// How often the test line is sent, in milliseconds
-#define TEST_LINE_INTERVAL_MS 1000
 
 /**
  * @brief SysTick interrupt, fires every 1 ms. Advances the HAL's millisecond counter.
@@ -29,30 +28,35 @@ static void error_halt(void)
 }
 
 /**
- * @brief Sends the test line to the bridge and toggles the LED, once the interval has passed.
- *
- * Does not wait: returns straight away when it is not time yet.
+ * @brief Shows the link to the bridge on the user LED: a fast blink while the connection is being
+ *        made, a slow blink once it is.
  */
-static void send_test_line_when_due(void)
+static void show_link_state(void)
 {
-    static uint32_t last_sent_ms = 0;
+    static uint32_t last_toggle_ms = 0;
+    uint32_t blink_ms = handshake_connected() ? LED_CONNECTED_BLINK_MS : LED_CONNECTING_BLINK_MS;
 
-    if (HAL_GetTick() - last_sent_ms < TEST_LINE_INTERVAL_MS) {
+    if (HAL_GetTick() - last_toggle_ms < blink_ms) {
         return;
     }
 
-    last_sent_ms = HAL_GetTick();
+    last_toggle_ms = HAL_GetTick();
     led_toggle();
-    link_send_line("T,test line from the nucleo");
 }
 
 /**
- * @brief Writes a line that has arrived from the bridge to the debug output, if one is complete.
+ * @brief Deals with a line that has arrived from the bridge, if one is complete.
+ *
+ * A handshake line goes to the handshake; any other line is written to the debug output.
  */
-static void show_received_line(void)
+static void handle_received_line(void)
 {
     const char *line = link_read_line();
     if (line == NULL) {
+        return;
+    }
+
+    if (handshake_handle_line(line)) {
         return;
     }
 
@@ -79,9 +83,11 @@ int main(void)
     }
 
     debug_print("weather logger started\r\n");
+    handshake_init();
 
     while (1) {
-        send_test_line_when_due();
-        show_received_line();
+        handle_received_line();
+        handshake_poll();
+        show_link_state();
     }
 }
