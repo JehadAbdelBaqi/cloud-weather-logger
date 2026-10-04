@@ -1,3 +1,6 @@
 # Private planning docs — not part of the public repo
 project-plan.md
 learnings.md
+
+# Each developer's own values, including the Wi-Fi password
+scripts/bridge-config.sh
