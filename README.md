@@ -1,7 +1,7 @@
 # Cloud Weather Logger
 
 An STM32 weather logger: temperature, pressure and humidity from a BME280,
-buffered in SPI flash while offline, sent over MQTT to a Docker stack
+held in memory while offline, sent over MQTT to a Docker stack
 (ingest → InfluxDB → Grafana) that runs on a local Ubuntu VM or on AWS EC2.
 
 ## Overview
@@ -13,7 +13,7 @@ buffered in SPI flash while offline, sent over MQTT to a Docker stack
          │   ▲                                                 │
          │   └── commands, acks, time ◄────────────────────────┤
          │                                                     ▼
-         ├─SPI─► [W25Q64 flash]                      server: Docker Compose
+         │                                           server: Docker Compose
          └─SPI─► [3.5" ILI9488 screen]               ingest → InfluxDB → Grafana
 
  LOCAL:  broker = Mosquitto            server = Multipass Ubuntu 24.04 VM
@@ -24,8 +24,9 @@ buffered in SPI flash while offline, sent over MQTT to a Docker stack
 
 - **Samples** temperature, pressure and humidity on a timer, and on demand.
 - **Timestamps** every reading on the device from its real-time clock.
-- **Keeps every reading in flash** until the server confirms it is stored, then
-  resends anything missed — a link, broker or database outage leaves no gap.
+- **Keeps every reading in memory** until the server confirms it is stored, then
+  resends anything missed — a short link, broker or database outage leaves no
+  gap. When the memory is full it stops taking readings until there is room.
 - **Takes commands** from the server over the same path the readings use.
 - **Shows** the latest reading and device health on its own screen.
 - **Graphs** the data in Grafana, and alerts when readings stop arriving.
@@ -38,8 +39,7 @@ buffered in SPI flash while offline, sent over MQTT to a Docker stack
 |-----------|-----|
 | Nucleo-F411RE (STM32Cube HAL, PlatformIO) | Samples the sensor, stores and sends readings, answers commands |
 | BME280 (I2C) | Temperature / pressure / humidity sensor |
-| W25Q64 (SPI) | Holds readings until the server acknowledges them |
-| 3.5" ILI9488 screen (SPI) | Latest reading, time, link status, flash backlog |
+| 3.5" ILI9488 screen (SPI) | Latest reading, time, link status, backlog |
 | Wi-Fi bridge (ESP32-S3, `uart-mqtt-bridge` firmware) | The link: UART ↔ MQTT over Wi-Fi/TLS |
 | Mosquitto / AWS IoT Core | MQTT broker — switched by config only |
 | Ingest (Python container) | Subscribes to readings, writes them to InfluxDB, sends acks |
