@@ -40,4 +40,16 @@ bool uart_init(uart_t *uart, const uart_config_t *config);
  */
 bool uart_write(uart_t *uart, const uint8_t *data, size_t length);
 
+/**
+ * @brief Takes one received byte, if one is waiting. Does not wait.
+ *
+ * The UART holds only one received byte at a time, so call this often: a byte not taken
+ * before the next one arrives is lost.
+ *
+ * @param uart A UART set up with uart_init()
+ * @param byte Filled in with the byte, when there is one
+ * @return true if a byte was taken, false if none was waiting
+ */
+bool uart_read_byte(uart_t *uart, uint8_t *byte);
+
 #endif

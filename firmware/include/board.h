@@ -18,4 +18,12 @@
 #define LINK_PIN_AF  GPIO_AF7_USART1
 #define LINK_BAUD    115200
 
+// Debug output - USART2 TX on PA2, which the ST-LINK passes to the PC as a USB serial port
+// (UM1724 section 6.8); alternate function 7. Output only: no RX pin is set up.
+#define DEBUG_UART    USART2
+#define DEBUG_PORT    GPIOA
+#define DEBUG_TX_PIN  GPIO_PIN_2
+#define DEBUG_PIN_AF  GPIO_AF7_USART2
+#define DEBUG_BAUD    115200
+
 #endif

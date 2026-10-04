@@ -30,6 +30,10 @@ static bool uart_clock_enable(const USART_TypeDef *instance)
         __HAL_RCC_USART1_CLK_ENABLE();
         return true;
     }
+    if (instance == USART2) {
+        __HAL_RCC_USART2_CLK_ENABLE();
+        return true;
+    }
     return false;
 }
 
@@ -86,4 +90,9 @@ bool uart_init(uart_t *uart, const uart_config_t *config)
 bool uart_write(uart_t *uart, const uint8_t *data, size_t length)
 {
     return HAL_UART_Transmit(uart, data, length, WRITE_TIMEOUT_MS) == HAL_OK;
+}
+
+bool uart_read_byte(uart_t *uart, uint8_t *byte)
+{
+    return HAL_UART_Receive(uart, byte, 1, 0) == HAL_OK;
 }
