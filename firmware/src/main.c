@@ -2,6 +2,7 @@
 
 #include "clock.h"
 #include "led.h"
+#include "link.h"
 
 /**
  * @brief SysTick interrupt, fires every 1 ms. Advances the HAL's millisecond counter.
@@ -31,9 +32,13 @@ int main(void)
         error_halt();
     }
     led_init();
+    if (!link_init()) {
+        error_halt();
+    }
 
     while (1) {
         led_toggle();
-        HAL_Delay(500);
+        link_send_line("T,test line from the nucleo");
+        HAL_Delay(1000);
     }
 }
