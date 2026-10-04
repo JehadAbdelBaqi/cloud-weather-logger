@@ -1,12 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Builds and uploads the Wi-Fi bridge with this project's config.
-# Run from scripts/. The steps to run are set in build-config.sh.
+# Runs the steps switched on in build-config.sh, in order. Run from scripts/.
 
-source helpers/bridge-helpers.sh
+source build-config.sh
 
-# The bridge's repository sits beside this one
-BRIDGE_REPO="../../uart-mqtt-bridge"
+if [ "$#" -gt 0 ]; then
+    echo "build.sh takes no options: set the steps to run in build-config.sh." >&2
+    exit 1
+fi
 
-build_and_upload_bridge "$BRIDGE_REPO" "bridge-config.sh" "../firmware/bridge/bridge-config.h" "build-config.sh"
+# Each entry is a switch, then the step it runs
+for step in "${PROJECT_STEPS[@]}"; do
+    run="${step%% *}"
+    script="${step#* }"
+
+    if [ "$run" = 1 ]; then
+        # shellcheck disable=SC2086  # a step's options are separate words
+        bash $script
+    fi
+done
+
+echo "Done."

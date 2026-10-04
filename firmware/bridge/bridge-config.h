@@ -16,4 +16,9 @@
 // Logs every line in both directions. 1 on, 0 off
 #define LOG_LINES 1
 
+// Handshake with the Nucleo ("H,request" / "H,ack")
+#define HANDSHAKE_REQUEST_INTERVAL_MS 2000  // how often the request is repeated while it goes unanswered
+#define HANDSHAKE_QUIET_LIMIT_MS      3000  // once connected: how long with no line from the Nucleo before asking
+#define HANDSHAKE_MISSED_LIMIT        5     // unanswered requests in a row before the connection counts as lost
+
 #endif
