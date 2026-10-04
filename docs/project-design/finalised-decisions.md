@@ -59,9 +59,10 @@ built: the [README](../../README.md) says what exists today.
 | **The UART code is two layers: a `uart` driver and a `link` module on top** | Each module has one job; the debug UART uses the same driver | 63 |
 | **Timings and other tunable values live in a config header, `firmware/include/config.h`, not in the code** | A value is changed in one known place without reading the code that uses it | 65 |
 | **Readings are timestamped on the Nucleo by its RTC**, on the on-board 32.768 kHz crystal, set from the bridge's time line | Readings replayed from flash keep their true time | 32 |
-| **SPI flash (W25Q64) and store-and-forward are in the core build, driven by acknowledgements** — every reading is kept until its `seq` is acked; unacked readings are resent | Nothing is lost while the link, broker, ingest or database is down; they all look the same to the device | 17, 31 |
-| **`seq` carries on across reboots** — found by scanning the flash log on boot, with the last value also kept in its own sector | A reused `seq` would collide with readings already acknowledged | 34 |
-| **A 3.5" ILI9488 screen on the Nucleo, in the core build**, sharing the SPI bus with the flash | Readings and device health are visible with no PC, network or server | 42 |
+| **While there is no connection, readings are kept in the Nucleo's memory; when that is full, it stops taking readings.** The SPI flash (W25Q64) is a stretch goal | Memory the Nucleo already has covers a short outage with no extra part; the flash module cannot be used until its pins are soldered | 17, 78 |
+| **Store-and-forward is driven by acknowledgements** — a reading is kept until its `seq` is acked, and unacked readings are resent. *Open: how this works with readings held in memory* | Nothing is lost while the link, broker, ingest or database is down; they all look the same to the device | 31 |
+| **`seq` carries on across reboots.** *Open: where the last value is kept, now that the flash is a stretch goal* | A reused `seq` would collide with readings already acknowledged | 34 |
+| **A 3.5" ILI9488 screen on the Nucleo, in the core build**, on the SPI bus | Readings and device health are visible with no PC, network or server | 42 |
 
 ## The server
 
@@ -100,5 +101,6 @@ built: the [README](../../README.md) says what exists today.
 | Decision | Why | Log |
 |----------|-----|-----|
 | **A read-now button** — a button press takes and sends a reading at once | Timed readings and the `read` command already cover on-demand readings | 16 |
+| **SPI flash (W25Q64)** — readings kept through a restart or a long outage | Memory covers a short outage in the core build | 78 |
 
 **See also:** [decision_logs.md](decision_logs.md) · [architecture.md](../system/architecture.md) · [protocol.md](../system/protocol.md)
