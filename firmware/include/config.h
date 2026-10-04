@@ -12,4 +12,7 @@
 #define LED_CONNECTING_BLINK_MS 100
 #define LED_CONNECTED_BLINK_MS  500
 
+// How often the sensor is read
+#define SENSOR_READ_INTERVAL_MS 2000
+
 #endif

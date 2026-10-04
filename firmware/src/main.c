@@ -90,6 +90,74 @@ static void show_sensor(void)
 }
 
 /**
+ * @brief Writes a list of numbers to the debug output on one line, after a label.
+ *
+ * @param label  Text to start the line with
+ * @param values The numbers
+ * @param count  How many numbers
+ */
+static void show_values(const char *label, const int32_t *values, size_t count)
+{
+    debug_print(label);
+    for (size_t i = 0; i < count; i++) {
+        debug_print(" ");
+        debug_print_signed(values[i]);
+    }
+    debug_print("\r\n");
+}
+
+/**
+ * @brief Reads the sensor's calibration values and writes them to the debug output.
+ */
+static void show_calibration(void)
+{
+    bme280_calibration_t c;
+
+    if (!bme280_read_calibration(&c)) {
+        debug_print("calibration: could not be read\r\n");
+        return;
+    }
+
+    const int32_t t[] = { c.t1, c.t2, c.t3 };
+    const int32_t p[] = { c.p1, c.p2, c.p3, c.p4, c.p5, c.p6, c.p7, c.p8, c.p9 };
+    const int32_t h[] = { c.h1, c.h2, c.h3, c.h4, c.h5, c.h6 };
+
+    show_values("calibration T:", t, sizeof(t) / sizeof(t[0]));
+    show_values("calibration P:", p, sizeof(p) / sizeof(p[0]));
+    show_values("calibration H:", h, sizeof(h) / sizeof(h[0]));
+}
+
+/**
+ * @brief Takes a measurement and writes its raw values to the debug output, once the interval
+ *        has passed.
+ *
+ * Does not wait when it is not time yet. Taking the measurement itself takes about 10 ms.
+ */
+static void show_raw_reading_when_due(void)
+{
+    static uint32_t last_read_ms = 0;
+    bme280_raw_t raw;
+
+    if (HAL_GetTick() - last_read_ms < SENSOR_READ_INTERVAL_MS) {
+        return;
+    }
+    last_read_ms = HAL_GetTick();
+
+    if (!bme280_read_raw(&raw)) {
+        debug_print("raw: the sensor could not be read\r\n");
+        return;
+    }
+
+    debug_print("raw: temperature ");
+    debug_print_number(raw.temperature);
+    debug_print(", pressure ");
+    debug_print_number(raw.pressure);
+    debug_print(", humidity ");
+    debug_print_number(raw.humidity);
+    debug_print("\r\n");
+}
+
+/**
  * @brief Entry point, called by the startup code after reset.
  */
 int main(void)
@@ -108,11 +176,13 @@ int main(void)
 
     debug_print("weather logger started\r\n");
     show_sensor();
+    show_calibration();
     handshake_init();
 
     while (1) {
         handle_received_line();
         handshake_poll();
         show_link_state();
+        show_raw_reading_when_due();
     }
 }

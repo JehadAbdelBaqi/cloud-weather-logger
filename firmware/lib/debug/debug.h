@@ -29,4 +29,18 @@ void debug_print(const char *text);
  */
 void debug_print_hex(uint8_t value);
 
+/**
+ * @brief Writes a whole number to the debug output in decimal.
+ *
+ * @param value The number
+ */
+void debug_print_number(uint32_t value);
+
+/**
+ * @brief Writes a whole number that may be negative to the debug output in decimal.
+ *
+ * @param value The number
+ */
+void debug_print_signed(int32_t value);
+
 #endif

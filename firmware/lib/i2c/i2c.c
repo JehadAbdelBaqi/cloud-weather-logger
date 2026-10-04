@@ -97,3 +97,9 @@ bool i2c_read(i2c_t *i2c, uint8_t address, uint8_t reg, uint8_t *data, size_t le
 {
     return HAL_I2C_Mem_Read(i2c, HAL_ADDRESS(address), reg, I2C_MEMADD_SIZE_8BIT, data, length, TIMEOUT_MS) == HAL_OK;
 }
+
+bool i2c_write(i2c_t *i2c, uint8_t address, uint8_t reg, const uint8_t *data, size_t length)
+{
+    // The HAL's parameter is not const, though it only reads the bytes
+    return HAL_I2C_Mem_Write(i2c, HAL_ADDRESS(address), reg, I2C_MEMADD_SIZE_8BIT, (uint8_t *)data, length, TIMEOUT_MS) == HAL_OK;
+}

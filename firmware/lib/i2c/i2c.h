@@ -51,4 +51,16 @@ bool i2c_device_present(i2c_t *i2c, uint8_t address);
  */
 bool i2c_read(i2c_t *i2c, uint8_t address, uint8_t reg, uint8_t *data, size_t length);
 
+/**
+ * @brief Writes one or more bytes to a device, starting at one of its registers.
+ *
+ * @param i2c      A bus set up with i2c_init()
+ * @param address  The device's 7-bit address
+ * @param reg      The register to start at
+ * @param data     The bytes to write
+ * @param length   How many bytes to write
+ * @return true if every byte was written, false if the device did not answer or it timed out
+ */
+bool i2c_write(i2c_t *i2c, uint8_t address, uint8_t reg, const uint8_t *data, size_t length);
+
 #endif
