@@ -33,6 +33,8 @@ built: the [README](../../README.md) says what exists today.
 | **`build.sh` takes no options: the steps are a list in `scripts/build-config.sh`, each with a switch in front of it** | What a run does is set in one file and the command is always the same | 72 |
 | **Until this project's own server stack exists, the bridge repository's test setup is the broker side** — its Multipass VM with Mosquitto and its scripts, with `mosquitto_pub` / `mosquitto_sub` standing in for the server; anything the bridge is missing is added in the bridge's repository | The protocol is tested end to end over MQTT from the first firmware phase | 54 |
 | **UART link at 115200 baud, 8N1, lines end in `\n`** (`\r\n` also accepted on receive) | Matches the bridge's UART settings and line handling | 44 |
+| **The Nucleo runs a handshake with the bridge before it uses the link, and keeps checking the connection** — `H,request` every second until the bridge answers `H,ack`, for as long as it takes; then a check every 20 s, with the connection counted as lost after 2 unanswered in a row. It covers the UART connection only | The two boards can restart or come loose on their own; the Nucleo depends on the bridge for everything it sends | 64 |
+| **The user LED (LD2) shows the link to the bridge** — it toggles every 200 ms while the connection is being made, and stays on once it is | It is the only LED the firmware controls, and the connection to the bridge is the first thing that has to work | 66 |
 | **Polled UART receive on the Nucleo** — no receive interrupt or ring buffer | Commands coming in are short and rare | 15 |
 
 ## The protocol
@@ -55,6 +57,7 @@ built: the [README](../../README.md) says what exists today.
 | **The firmware lives in `firmware/`, with each module in its own folder under `firmware/lib/`**; `src/` holds only `main.c`, `include/` only `board.h` | The firmware is one part of the repository among several; a module's files sit together | 60, 62 |
 | **System clock is the internal 16 MHz oscillator, no PLL, no bus dividers** | Nothing here needs more speed; no PLL factors or flash wait states to get right | 61 |
 | **The UART code is two layers: a `uart` driver and a `link` module on top** | Each module has one job; the debug UART uses the same driver | 63 |
+| **Timings and other tunable values live in a config header, `firmware/include/config.h`, not in the code** | A value is changed in one known place without reading the code that uses it | 65 |
 | **Readings are timestamped on the Nucleo by its RTC**, on the on-board 32.768 kHz crystal, set from the bridge's time line | Readings replayed from flash keep their true time | 32 |
 | **SPI flash (W25Q64) and store-and-forward are in the core build, driven by acknowledgements** — every reading is kept until its `seq` is acked; unacked readings are resent | Nothing is lost while the link, broker, ingest or database is down; they all look the same to the device | 17, 31 |
 | **`seq` carries on across reboots** — found by scanning the flash log on boot, with the last value also kept in its own sector | A reused `seq` would collide with readings already acknowledged | 34 |
