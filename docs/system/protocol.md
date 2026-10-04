@@ -93,9 +93,9 @@ H,ack          the side that received H,request: "I am here"
   answered it.
 - **Not connected:** `H,request` is repeated every 2 s, for as long as it takes.
 - **Connected:** nothing is sent while lines keep arriving from the other side;
-  any line shows it is still there. After 5 s with none, `H,request` is sent
+  any line shows it is still there. After 3 s with none, `H,request` is sent
   every 2 s. After 5 in a row go unanswered, the connection counts as lost.
-  A lost connection is noticed about 15 s after the last line.
+  A lost connection is noticed about 13 s after the last line.
 - **Never published.** The bridge handles `H` lines itself; the letter `H` is
   reserved and has no topic.
 
@@ -104,8 +104,8 @@ bridge's in `firmware/bridge/bridge-config.h`.
 
 | | Not connected | Connected | Connected, but quiet and being asked |
 |---|---|---|---|
-| Nucleo's user LED | Toggles every 200 ms | Toggles every 500 ms | Toggles every 500 ms |
-| Bridge's LED | Blinks red | Shows Wi-Fi and broker state | Flashes green fast |
+| Nucleo's user LED | Toggles every 100 ms | Toggles every 500 ms | Toggles every 500 ms |
+| Bridge's LED | Blinks red | Shows Wi-Fi and broker state | Flashes green, 100 ms on / off |
 
 The Nucleo sends nothing but `H,request` until the connection is made.
 
