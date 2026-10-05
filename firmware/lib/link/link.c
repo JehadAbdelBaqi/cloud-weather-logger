@@ -2,8 +2,6 @@
 
 #include <string.h>
 
-#include "board.h"
-#include "uart.h"
 
 static uart_t link_uart;
 
@@ -51,17 +49,9 @@ static bool take_byte(uint8_t byte)
     return false;
 }
 
-bool link_init(void)
+bool link_init(const uart_config_t *config)
 {
-    const uart_config_t config = {
-        .instance = LINK_UART,
-        .port = LINK_PORT,
-        .tx_pin = LINK_TX_PIN,
-        .rx_pin = LINK_RX_PIN,
-        .pin_af = LINK_PIN_AF,
-        .baud = LINK_BAUD,
-    };
-    return uart_init(&link_uart, &config);
+    return uart_init(&link_uart, config);
 }
 
 bool link_send_line(const char *line)

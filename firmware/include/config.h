@@ -12,4 +12,11 @@
 #define LED_CONNECTING_BLINK_MS 100
 #define LED_CONNECTED_BLINK_MS  500
 
+// How often the sensor is read
+#define SENSOR_READ_INTERVAL_MS 2000
+
+// Stand-in for the time of a reading until the RTC is set up: the time starts here at every
+// power-on and counts up. Unix time in seconds: 5 October 2026, 00:00 UK time
+#define READING_TIME_START 1791154800u
+
 #endif

@@ -54,14 +54,18 @@ built: the [README](../../README.md) says what exists today.
 | Decision | Why | Log |
 |----------|-----|-----|
 | **Peripherals are driven through the STM32Cube HAL**, built with PlatformIO (`framework = stm32cube`); setup is written by hand, and STM32CubeMX is a reference only | ST's supported driver layer; one build tool for both firmwares; every file in the repository is hand-written | 58, 59 |
-| **The firmware lives in `firmware/`, with each module in its own folder under `firmware/lib/`**; `src/` holds only `main.c`, `include/` only `board.h` | The firmware is one part of the repository among several; a module's files sit together | 60, 62 |
+| **The firmware lives in `firmware/`: drivers and building blocks each in their own folder under `firmware/lib/`, the application code in `firmware/src/`** — `src/main.c` is the set-up and the main loop, `src/app/` holds `board`, `sensor`, `handshake`, `router`, `status` and `interrupts`, with their headers in `firmware/include/` | The firmware is one part of the repository among several; a module's files sit together; a module under `lib/` knows nothing about the program it is used in | 60, 62, 81, 83 |
+| **The modules under `firmware/lib/` are given their pins when they are set up; none of them reads `board.h`.** `include/board.h` is the one place the pin assignments are written, and `src/app/board.c` hands them over in `board_init()`, the first call in `main()` | A module that is told its pins can be lifted into another project as it is; a different board is an edit to `board.h` alone | 82 |
 | **System clock is the internal 16 MHz oscillator, no PLL, no bus dividers** | Nothing here needs more speed; no PLL factors or flash wait states to get right | 61 |
 | **The UART code is two layers: a `uart` driver and a `link` module on top** | Each module has one job; the debug UART uses the same driver | 63 |
+| **The BME280 code is three files in its module folder**: `bme280` talks to the sensor, `bme280_calibration` reads the calibration values, `bme280_compensation` turns raw values into real units and is maths only, with the fine temperature value handed from one formula to the next | Each file has one job; the compensation touches no hardware, so it can be tested on a PC | 80 |
 | **Timings and other tunable values live in a config header, `firmware/include/config.h`, not in the code** | A value is changed in one known place without reading the code that uses it | 65 |
 | **Readings are timestamped on the Nucleo by its RTC**, on the on-board 32.768 kHz crystal, set from the bridge's time line | Readings replayed from flash keep their true time | 32 |
-| **SPI flash (W25Q64) and store-and-forward are in the core build, driven by acknowledgements** — every reading is kept until its `seq` is acked; unacked readings are resent | Nothing is lost while the link, broker, ingest or database is down; they all look the same to the device | 17, 31 |
-| **`seq` carries on across reboots** — found by scanning the flash log on boot, with the last value also kept in its own sector | A reused `seq` would collide with readings already acknowledged | 34 |
-| **A 3.5" ILI9488 screen on the Nucleo, in the core build**, sharing the SPI bus with the flash | Readings and device health are visible with no PC, network or server | 42 |
+| **Until the RTC is set up, a reading's time is a stand-in**: a fixed starting time from `firmware/include/config.h` plus the seconds since power-on | The `W` line has its full shape from the first reading sent; the RTC later changes only where the number comes from | 85 |
+| **While there is no connection, readings are kept in the Nucleo's memory; when that is full, it stops taking readings.** The SPI flash (W25Q64) is a stretch goal | Memory the Nucleo already has covers a short outage with no extra part; the flash module cannot be used until its pins are soldered | 17, 78 |
+| **Store-and-forward is driven by acknowledgements** — a reading is kept until its `seq` is acked, and unacked readings are resent. *Open: how this works with readings held in memory* | Nothing is lost while the link, broker, ingest or database is down; they all look the same to the device | 31 |
+| **`seq` starts again each time the Nucleo is switched off and on.** *Later: how readings from before and after a restart are told apart* | There is nowhere to keep the last value without the flash | 34, 79 |
+| **A 3.5" ILI9488 screen on the Nucleo, in the core build**, on the SPI bus | Readings and device health are visible with no PC, network or server | 42 |
 
 ## The server
 
@@ -91,6 +95,7 @@ built: the [README](../../README.md) says what exists today.
 | Decision | Why | Log |
 |----------|-----|-----|
 | **A hardware-in-the-loop test in CI** — a self-hosted runner with the Nucleo attached flashes each firmware build and checks its replies. *How the commands are sent is open, now that the USB serial port carries debug output only* | Every firmware change is tested on the real board, not only compiled | 43 |
+| **The compensation maths has no tests of its own on the PC**; readings are checked on the server side, with the ingest service's tests | The formulas are the datasheet's as they stand and give plausible readings on the board; the system is about carrying readings, not measurement accuracy | 84 |
 | **All work goes through pull requests** with a description and a checklist | Each change is reviewable as one unit; the main branch holds only merged, working states | 56 |
 | **No step-by-step build guide and no per-phase git tags** — the README carries the instructions for the finished system; the pull requests are the record of how it was built | Nothing extra to keep correct as earlier code changes | 57 |
 | **Two decision files: the log, and this file of decisions in force** | The log shows how the design got here; this file states the current design directly | 69 |
@@ -100,5 +105,6 @@ built: the [README](../../README.md) says what exists today.
 | Decision | Why | Log |
 |----------|-----|-----|
 | **A read-now button** — a button press takes and sends a reading at once | Timed readings and the `read` command already cover on-demand readings | 16 |
+| **SPI flash (W25Q64)** — readings kept through a restart or a long outage | Memory covers a short outage in the core build | 78 |
 
 **See also:** [decision_logs.md](decision_logs.md) · [architecture.md](../system/architecture.md) · [protocol.md](../system/protocol.md)

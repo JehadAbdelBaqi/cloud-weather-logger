@@ -12,8 +12,7 @@ PlatformIO (`framework = stm32cube`).
 | USART1 (PA9 TX / PA10 RX) | Wi-Fi bridge | Protocol lines |
 | USART2 (via ST-LINK USB) | PC serial monitor | Debug output only |
 | I2C | BME280 | Temperature / pressure / humidity |
-| SPI | W25Q64 flash | Reading log |
-| SPI (same bus, own chip select) | 3.5" ILI9488 screen | On-device display |
+| SPI | 3.5" ILI9488 screen | On-device display |
 | RTC on the LSE crystal | — | Timestamps |
 
 ## Drivers
@@ -35,25 +34,24 @@ only, so the Nucleo can be watched in a serial monitor while the link runs.
 ## Store-and-forward
 
 ```
- sample ─► write to flash ─► send W line ─► ... ─► A,<seq> arrives
+ sample ─► keep in memory ─► send W line ─► ... ─► A,<seq> arrives
                                                      │
                        readings up to seq are acked ◄┘
-                       sector freed once all its readings are acked
+                       their memory is freed
                        anything unacked is resent
 ```
 
-- Every reading is kept in flash until its `seq` is acknowledged.
+- Every reading is kept in the Nucleo's memory until its `seq` is acknowledged.
 - The ack is sent only after the reading is written to InfluxDB.
-- A 4 KB sector is freed once all the readings in it are acked.
 - Unacked readings are resent.
+- When the memory is full, the Nucleo stops taking readings until there is
+  room again.
+- Readings held in memory are lost if the Nucleo restarts or loses power.
 
 ## Sequence numbers
 
-`seq` carries on across reboots and is never reused.
-
-- On boot the Nucleo scans the flash log for the highest `seq`.
-- A dedicated W25Q64 sector also holds the last `seq` used, for when the log is
-  empty.
+`seq` counts up from the start each time the Nucleo is switched on. It is not
+kept across a restart.
 
 ## Time
 
@@ -61,19 +59,19 @@ only, so the Nucleo can be watched in a serial monitor while the link runs.
   32.768 kHz LSE crystal (X2 on the MB1136 C-04 board).
 - The bridge sends the real time down the UART (`T` line) on connect and hourly.
 - No readings are taken after a power-up until the first `T` has set the clock.
-- Readings replayed from flash carry their original sample time.
+- Readings resent from memory carry their original sample time.
 
 ## Screen
 
-A 3.5" ILI9488 on the same SPI bus as the flash, with its own chip select, DC
-and reset lines. Touch is not used.
+A 3.5" ILI9488 on the SPI bus, with its own chip select, DC and reset lines.
+Touch is not used.
 
 | Shows |
 |-------|
 | Latest temperature / pressure / humidity |
 | RTC time |
 | Link status |
-| Flash backlog (readings stored, not yet acked) |
+| Backlog (readings held, not yet acked) |
 
 ## Commands
 
@@ -82,8 +80,6 @@ broker and the bridge. Formats in [protocol.md](protocol.md).
 
 ## Testing
 
-- **Host-side unit tests** for the BME280 compensation maths, against the
-  datasheet's worked values.
 - **Hardware-in-the-loop test in CI** — see [deployment.md](deployment.md).
 
 ## See also

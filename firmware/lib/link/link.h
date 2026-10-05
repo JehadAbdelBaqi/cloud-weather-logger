@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#include "uart.h"
+
 // Longest line in either direction, in characters, not counting the '\n' (same as the bridge)
 #define LINK_LINE_MAX_LEN 127
 
@@ -11,9 +13,10 @@
  *
  * Call once before any other link_ function.
  *
+ * @param config Which UART the bridge is on, its pins and its speed
  * @return true if the link's UART was set up
  */
-bool link_init(void);
+bool link_init(const uart_config_t *config);
 
 /**
  * @brief Sends one protocol line to the bridge.

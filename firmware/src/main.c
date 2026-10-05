@@ -1,21 +1,11 @@
-#include <stddef.h>
-
 #include "stm32f4xx_hal.h"
 
-#include "clock.h"
-#include "config.h"
+#include "board.h"
 #include "debug.h"
 #include "handshake.h"
-#include "led.h"
-#include "link.h"
-
-/**
- * @brief SysTick interrupt, fires every 1 ms. Advances the HAL's millisecond counter.
- */
-void SysTick_Handler(void)
-{
-    HAL_IncTick();
-}
+#include "router.h"
+#include "sensor.h"
+#include "status.h"
 
 /**
  * @brief Stops the program after a setup step has failed. Never returns.
@@ -28,66 +18,22 @@ static void error_halt(void)
 }
 
 /**
- * @brief Shows the link to the bridge on the user LED: a fast blink while the connection is being
- *        made, a slow blink once it is.
- */
-static void show_link_state(void)
-{
-    static uint32_t last_toggle_ms = 0;
-    uint32_t blink_ms = handshake_connected() ? LED_CONNECTED_BLINK_MS : LED_CONNECTING_BLINK_MS;
-
-    if (HAL_GetTick() - last_toggle_ms < blink_ms) {
-        return;
-    }
-
-    last_toggle_ms = HAL_GetTick();
-    led_toggle();
-}
-
-/**
- * @brief Deals with a line that has arrived from the bridge, if one is complete.
- *
- * A handshake line goes to the handshake; any other line is written to the debug output.
- */
-static void handle_received_line(void)
-{
-    const char *line = link_read_line();
-    if (line == NULL) {
-        return;
-    }
-
-    if (handshake_handle_line(line)) {
-        return;
-    }
-
-    debug_print("down: ");
-    debug_print(line);
-    debug_print("\r\n");
-}
-
-/**
  * @brief Entry point, called by the startup code after reset.
  */
 int main(void)
 {
-    HAL_Init();
-    if (!clock_init()) {
-        error_halt();
-    }
-    led_init();
-    if (!debug_init()) {
-        error_halt();
-    }
-    if (!link_init()) {
+    if (!board_init()) {
         error_halt();
     }
 
     debug_print("weather logger started\r\n");
+    sensor_init();
     handshake_init();
 
     while (1) {
-        handle_received_line();
+        router_poll();
         handshake_poll();
-        show_link_state();
+        status_poll();
+        sensor_poll();
     }
 }
