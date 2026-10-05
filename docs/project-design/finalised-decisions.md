@@ -65,6 +65,7 @@ What this project uses and how it is put together: the decisions made and still 
 - Readings are held in memory while there is no connection
 - Store-and-forward driven by acknowledgements
 - The sequence number starts again at power-on
+- Unit tests on the PC, written alongside new logic that touches no hardware
 
 ## The server
 
