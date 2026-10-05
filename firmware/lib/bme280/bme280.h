@@ -2,7 +2,10 @@
 #define BME280_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
+
+#include "i2c.h"
 
 /** One measurement as the sensor gives it: raw values, not yet in real units. */
 typedef struct {
@@ -12,39 +15,15 @@ typedef struct {
 } bme280_raw_t;
 
 /**
- * The calibration values stored in each sensor at the factory, which turn raw values into
- * real units. Names and types as in the BME280 datasheet, Table 16.
- */
-typedef struct {
-    uint16_t t1;
-    int16_t t2;
-    int16_t t3;
-    uint16_t p1;
-    int16_t p2;
-    int16_t p3;
-    int16_t p4;
-    int16_t p5;
-    int16_t p6;
-    int16_t p7;
-    int16_t p8;
-    int16_t p9;
-    uint8_t h1;
-    int16_t h2;
-    uint8_t h3;
-    int16_t h4;
-    int16_t h5;
-    int8_t h6;
-} bme280_calibration_t;
-
-/**
  * @brief Sets up the I2C bus the BME280 is on and finds the sensor.
  *
  * The sensor answers at one of two addresses, depending on how its address pin is tied;
  * both are tried.
  *
+ * @param config Which I2C bus the sensor is on, its pins and its speed
  * @return true if the bus was set up and a device answered at one of the two addresses
  */
-bool bme280_init(void);
+bool bme280_init(const i2c_config_t *config);
 
 /**
  * @brief Gives the address the sensor was found at.
@@ -62,12 +41,14 @@ uint8_t bme280_address(void);
 bool bme280_read_chip_id(uint8_t *chip_id);
 
 /**
- * @brief Reads the sensor's calibration values. They never change, so once is enough.
+ * @brief Reads a run of the sensor's registers.
  *
- * @param calibration Filled in with the values
+ * @param reg    The first register
+ * @param data   Filled in with the bytes read
+ * @param length How many bytes
  * @return true if they were read
  */
-bool bme280_read_calibration(bme280_calibration_t *calibration);
+bool bme280_read_registers(uint8_t reg, uint8_t *data, size_t length);
 
 /**
  * @brief Takes one measurement and reads its raw values.

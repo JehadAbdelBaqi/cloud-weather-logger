@@ -80,8 +80,6 @@ broker and the bridge. Formats in [protocol.md](protocol.md).
 
 ## Testing
 
-- **Host-side unit tests** for the BME280 compensation maths, against the
-  datasheet's worked values.
 - **Hardware-in-the-loop test in CI** — see [deployment.md](deployment.md).
 
 ## See also

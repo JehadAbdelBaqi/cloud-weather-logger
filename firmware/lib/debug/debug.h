@@ -4,14 +4,17 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "uart.h"
+
 /**
  * @brief Sets up the debug output: text sent to the PC's serial monitor through the ST-LINK.
  *
  * Call once before debug_print().
  *
+ * @param config Which UART the debug output is on, its pins and its speed
  * @return true if the debug UART was set up
  */
-bool debug_init(void);
+bool debug_init(const uart_config_t *config);
 
 /**
  * @brief Writes text to the debug output, unchanged.
