@@ -39,7 +39,7 @@ What this project uses and how it is put together: the decisions made and still 
 - One script, `build.sh`, builds and uploads both boards; its steps are switched in `build-config.sh`
 - The bridge repository's test broker is the broker side until this project's server stack exists
 - A handshake between the Nucleo and the bridge before the link is used, and a watch on it afterwards
-- Polled UART receive on the Nucleo
+- Interrupt-driven UART receive on the Nucleo, into a buffer
 
 ## The protocol
 
