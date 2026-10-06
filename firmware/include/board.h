@@ -5,7 +5,7 @@
 
 #include "stm32f4xx_hal.h"
 
-#include "i2c.h"
+#include "i2c_driver.h"
 
 // Pin assignments on the Nucleo-F411RE, and the set-up that hands them to the modules.
 

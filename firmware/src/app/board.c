@@ -1,10 +1,10 @@
 #include "board.h"
 
-#include "clock.h"
+#include "clock_driver.h"
 #include "debug.h"
-#include "led.h"
+#include "led_driver.h"
 #include "link.h"
-#include "uart.h"
+#include "uart_driver.h"
 
 static const uart_config_t debug_config = {
     .instance = DEBUG_UART,

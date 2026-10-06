@@ -1,25 +1,12 @@
-#include "i2c.h"
+#include "i2c_driver.h"
+
+#include "gpio_driver.h"
 
 // Longest wait for one exchange, in milliseconds
 #define TIMEOUT_MS 100
 
 // The HAL takes the address shifted up by one, leaving room for the read/write bit
 #define HAL_ADDRESS(address) ((uint16_t)((address) << 1))
-
-/**
- * @brief Turns on the clock of the GPIO port a bus's pins are on.
- *
- * @param port The GPIO port
- * @return true if the clock was turned on, false if the port is not one this driver knows
- */
-static bool port_clock_enable(const GPIO_TypeDef *port)
-{
-    if (port == GPIOB) {
-        __HAL_RCC_GPIOB_CLK_ENABLE();
-        return true;
-    }
-    return false;
-}
 
 /**
  * @brief Turns on the clock of an I2C bus.
@@ -43,16 +30,11 @@ static bool bus_clock_enable(const I2C_TypeDef *instance)
  * The internal pull-ups are switched on as well as any fitted on the device's board.
  *
  * @param config Which port, pins and alternate function
+ * @return true if the pins were set up, false if the port is not one the GPIO driver knows
  */
-static void pins_init(const i2c_config_t *config)
+static bool pins_init(const i2c_config_t *config)
 {
-    GPIO_InitTypeDef pins = {0};
-    pins.Pin = config->scl_pin | config->sda_pin;
-    pins.Mode = GPIO_MODE_AF_OD;
-    pins.Pull = GPIO_PULLUP;
-    pins.Speed = GPIO_SPEED_FREQ_LOW;
-    pins.Alternate = config->pin_af;
-    HAL_GPIO_Init(config->port, &pins);
+    return gpio_init_peripheral_pins(config->port, config->scl_pin | config->sda_pin, GPIO_MODE_AF_OD, config->pin_af);
 }
 
 /**
@@ -78,13 +60,12 @@ static bool settings_init(i2c_t *i2c, const i2c_config_t *config)
 
 bool i2c_init(i2c_t *i2c, const i2c_config_t *config)
 {
-    if (!port_clock_enable(config->port)) {
-        return false;
-    }
     if (!bus_clock_enable(config->instance)) {
         return false;
     }
-    pins_init(config);
+    if (!pins_init(config)) {
+        return false;
+    }
     return settings_init(i2c, config);
 }
 

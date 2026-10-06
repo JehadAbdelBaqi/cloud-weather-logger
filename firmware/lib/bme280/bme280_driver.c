@@ -1,20 +1,23 @@
-#include "bme280.h"
+#include "bme280_driver.h"
 
 #include <stddef.h>
 
 #include "stm32f4xx_hal.h"
 
+#include "time_interval.h"
 
 // The two addresses the sensor can have, set by its address pin (BME280 datasheet, I2C interface)
 #define ADDRESS_LOW  0x76
 #define ADDRESS_HIGH 0x77
 
 // Registers (BME280 datasheet section 5.4)
+#define REG_CALIB_A   0x88  // BME280_CALIBRATION_A_LENGTH bytes
 #define REG_CHIP_ID   0xD0
+#define REG_CALIB_B   0xE1  // BME280_CALIBRATION_B_LENGTH bytes
 #define REG_CTRL_HUM  0xF2
 #define REG_STATUS    0xF3
 #define REG_CTRL_MEAS 0xF4
-#define REG_DATA      0xF7  // 8 bytes: pressure (3), temperature (3), humidity (2)
+#define REG_DATA      0xF7  // BME280_RAW_LENGTH bytes
 
 // ctrl_hum: humidity measured once per measurement (oversampling x1)
 #define CTRL_HUM_X1 0x01
@@ -59,7 +62,15 @@ bool bme280_read_chip_id(uint8_t *chip_id)
     return i2c_read(&sensor_bus, sensor_address, REG_CHIP_ID, chip_id, 1);
 }
 
-bool bme280_read_registers(uint8_t reg, uint8_t *data, size_t length)
+/**
+ * @brief Reads a run of the sensor's registers.
+ *
+ * @param reg    The first register
+ * @param data   Filled in with the bytes read
+ * @param length How many bytes
+ * @return true if they were read
+ */
+static bool read_registers(uint8_t reg, uint8_t *data, size_t length)
 {
     return i2c_read(&sensor_bus, sensor_address, reg, data, length);
 }
@@ -104,7 +115,7 @@ static bool wait_measurement_done(void)
     HAL_Delay(2);  // the sensor needs a moment before it shows that it is measuring
 
     while (status & STATUS_MEASURING) {
-        if (HAL_GetTick() - started_ms > MEASURE_TIMEOUT_MS) {
+        if (time_interval_passed(HAL_GetTick(), started_ms, MEASURE_TIMEOUT_MS)) {
             return false;
         }
         if (!i2c_read(&sensor_bus, sensor_address, REG_STATUS, &status, 1)) {
@@ -116,7 +127,7 @@ static bool wait_measurement_done(void)
 
 bool bme280_read_raw(bme280_raw_t *raw)
 {
-    uint8_t data[8];
+    uint8_t data[BME280_RAW_LENGTH];
 
     if (!start_measurement()) {
         return false;
@@ -128,9 +139,22 @@ bool bme280_read_raw(bme280_raw_t *raw)
         return false;
     }
 
-    // Pressure and temperature are 20 bits each: 8 + 8 + the top 4 bits of a third byte
-    raw->pressure = ((uint32_t)data[0] << 12) | ((uint32_t)data[1] << 4) | (data[2] >> 4);
-    raw->temperature = ((uint32_t)data[3] << 12) | ((uint32_t)data[4] << 4) | (data[5] >> 4);
-    raw->humidity = (uint16_t)((data[6] << 8) | data[7]);
+    bme280_raw_from_bytes(data, raw);
+    return true;
+}
+
+bool bme280_read_calibration(bme280_calibration_t *calibration)
+{
+    uint8_t a[BME280_CALIBRATION_A_LENGTH];
+    uint8_t b[BME280_CALIBRATION_B_LENGTH];
+
+    if (!read_registers(REG_CALIB_A, a, sizeof(a))) {
+        return false;
+    }
+    if (!read_registers(REG_CALIB_B, b, sizeof(b))) {
+        return false;
+    }
+
+    bme280_calibration_from_bytes(a, b, calibration);
     return true;
 }

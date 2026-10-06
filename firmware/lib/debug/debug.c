@@ -2,6 +2,8 @@
 
 #include <string.h>
 
+#include "format_number.h"
+
 static uart_t debug_uart;
 
 bool debug_init(const uart_config_t *config)
@@ -16,34 +18,24 @@ void debug_print(const char *text)
 
 void debug_print_hex(uint8_t value)
 {
-    static const char digits[] = "0123456789ABCDEF";
-    const char text[] = { '0', 'x', digits[value >> 4], digits[value & 0x0F], '\0' };
+    char text[FORMAT_HEX_BYTE_SIZE];
 
+    format_hex_byte(value, text);
     debug_print(text);
 }
 
 void debug_print_number(uint32_t value)
 {
-    char text[11];  // 10 digits at most, then the ending '\0'
-    char *digit = &text[sizeof(text) - 1];
+    char text[FORMAT_NUMBER_SIZE];
 
-    *digit = '\0';
-    do {
-        digit--;
-        *digit = (char)('0' + value % 10);
-        value /= 10;
-    } while (value > 0);
-
-    debug_print(digit);
+    format_number(value, text);
+    debug_print(text);
 }
 
 void debug_print_signed(int32_t value)
 {
-    if (value >= 0) {
-        debug_print_number((uint32_t)value);
-        return;
-    }
+    char text[FORMAT_SIGNED_SIZE];
 
-    debug_print("-");
-    debug_print_number(0u - (uint32_t)value);
+    format_signed(value, text);
+    debug_print(text);
 }

@@ -1,18 +1,12 @@
-#ifndef BME280_H
-#define BME280_H
+#ifndef BME280_DRIVER_H
+#define BME280_DRIVER_H
 
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
 
-#include "i2c.h"
-
-/** One measurement as the sensor gives it: raw values, not yet in real units. */
-typedef struct {
-    uint32_t pressure;     // 20 bits
-    uint32_t temperature;  // 20 bits
-    uint16_t humidity;     // 16 bits
-} bme280_raw_t;
+#include "bme280_calibration.h"
+#include "bme280_raw.h"
+#include "i2c_driver.h"
 
 /**
  * @brief Sets up the I2C bus the BME280 is on and finds the sensor.
@@ -41,14 +35,14 @@ uint8_t bme280_address(void);
 bool bme280_read_chip_id(uint8_t *chip_id);
 
 /**
- * @brief Reads a run of the sensor's registers.
+ * @brief Reads the sensor's calibration values. They never change, so once is enough.
  *
- * @param reg    The first register
- * @param data   Filled in with the bytes read
- * @param length How many bytes
+ * Call after bme280_init() has found the sensor.
+ *
+ * @param calibration Filled in with the values
  * @return true if they were read
  */
-bool bme280_read_registers(uint8_t reg, uint8_t *data, size_t length);
+bool bme280_read_calibration(bme280_calibration_t *calibration);
 
 /**
  * @brief Takes one measurement and reads its raw values.

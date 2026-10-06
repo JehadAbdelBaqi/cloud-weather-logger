@@ -1,5 +1,5 @@
-#ifndef UART_H
-#define UART_H
+#ifndef UART_DRIVER_H
+#define UART_DRIVER_H
 
 #include <stdbool.h>
 #include <stddef.h>
