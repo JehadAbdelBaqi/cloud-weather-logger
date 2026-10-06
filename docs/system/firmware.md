@@ -140,6 +140,9 @@ broker and the bridge. Formats in [protocol.md](protocol.md).
 
 ## Testing
 
+- **Unit tests on the PC** — for the library code with no hardware in it, run
+  with `pio test -e native` from `firmware/`. See
+  [firmware/test/README.md](../../firmware/test/README.md).
 - **Hardware-in-the-loop test in CI** — see [deployment.md](deployment.md).
 
 ## See also
