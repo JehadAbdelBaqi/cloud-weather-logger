@@ -8,6 +8,7 @@
 #include "config.h"
 #include "debug.h"
 #include "link.h"
+#include "time_interval.h"
 
 #define HANDSHAKE_LETTER 'H'
 #define REQUEST_LINE     "H,request"
@@ -79,13 +80,13 @@ static void note_missed(void)
  */
 static bool request_due(void)
 {
-    if (connected && HAL_GetTick() - last_heard_ms < HANDSHAKE_QUIET_LIMIT_MS) {
+    if (connected && !time_interval_passed(HAL_GetTick(), last_heard_ms, HANDSHAKE_QUIET_LIMIT_MS)) {
         return false;
     }
     if (!request_sent) {
         return true;
     }
-    return HAL_GetTick() - last_request_ms >= HANDSHAKE_REQUEST_INTERVAL_MS;
+    return time_interval_passed(HAL_GetTick(), last_request_ms, HANDSHAKE_REQUEST_INTERVAL_MS);
 }
 
 void handshake_init(void)

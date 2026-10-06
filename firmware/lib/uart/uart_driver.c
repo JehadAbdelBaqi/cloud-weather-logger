@@ -1,22 +1,9 @@
-#include "uart.h"
+#include "uart_driver.h"
+
+#include "gpio_driver.h"
 
 // Longest wait for one uart_write() to go out, in milliseconds
 #define WRITE_TIMEOUT_MS 100
-
-/**
- * @brief Turns on the clock of the GPIO port a UART's pins are on.
- *
- * @param port The GPIO port
- * @return true if the clock was turned on, false if the port is not one this driver knows
- */
-static bool port_clock_enable(const GPIO_TypeDef *port)
-{
-    if (port == GPIOA) {
-        __HAL_RCC_GPIOA_CLK_ENABLE();
-        return true;
-    }
-    return false;
-}
 
 /**
  * @brief Turns on the clock of a UART.
@@ -43,16 +30,11 @@ static bool uart_clock_enable(const USART_TypeDef *instance)
  * The pull-up holds RX at the idle level while nothing is connected to it.
  *
  * @param config Which port, pins and alternate function
+ * @return true if the pins were set up, false if the port is not one the GPIO driver knows
  */
-static void pins_init(const uart_config_t *config)
+static bool pins_init(const uart_config_t *config)
 {
-    GPIO_InitTypeDef pins = {0};
-    pins.Pin = config->tx_pin | config->rx_pin;
-    pins.Mode = GPIO_MODE_AF_PP;
-    pins.Pull = GPIO_PULLUP;
-    pins.Speed = GPIO_SPEED_FREQ_LOW;
-    pins.Alternate = config->pin_af;
-    HAL_GPIO_Init(config->port, &pins);
+    return gpio_init_peripheral_pins(config->port, config->tx_pin | config->rx_pin, GPIO_MODE_AF_PP, config->pin_af);
 }
 
 /**
@@ -77,13 +59,12 @@ static bool settings_init(uart_t *uart, const uart_config_t *config)
 
 bool uart_init(uart_t *uart, const uart_config_t *config)
 {
-    if (!port_clock_enable(config->port)) {
-        return false;
-    }
     if (!uart_clock_enable(config->instance)) {
         return false;
     }
-    pins_init(config);
+    if (!pins_init(config)) {
+        return false;
+    }
     return settings_init(uart, config);
 }
 

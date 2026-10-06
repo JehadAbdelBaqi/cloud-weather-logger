@@ -15,6 +15,66 @@ PlatformIO (`framework = stm32cube`).
 | SPI | 3.5" ILI9488 screen | On-device display |
 | RTC on the LSE crystal | — | Timestamps |
 
+## Code layout
+
+```
+firmware/
+  src/main.c     set-up, then the main loop
+  src/app/       the application: what this program does with the libraries
+  include/       the application's headers, board.h (pins) and config.h (tunable values)
+  lib/           the libraries, one folder per module
+```
+
+- **A library knows nothing about this program.** Nothing under `lib/` includes
+  a file from `src/` or `include/`, and each library is given its pins when it
+  is set up.
+- **The application uses the libraries.** It decides when a reading is taken,
+  what is sent and what the LED shows.
+
+### Libraries
+
+| Folder | Job |
+|--------|-----|
+| `gpio/` | Turns on a port's clock, sets up pins |
+| `uart/` | Sets up a UART, sends and receives bytes |
+| `i2c/` | Sets up an I2C bus, reads and writes a device's registers |
+| `led/` | Sets up and toggles an LED |
+| `clock/` | Sets the system clock |
+| `bme280/` | The sensor: measurements, calibration values, raw values to real units |
+| `link/` | Text lines to and from the bridge, over a UART |
+| `debug/` | Text to the PC's serial monitor, over a UART |
+| `format/` | Numbers to text |
+| `time/` | Whether an interval has passed |
+
+### File names in `lib/`
+
+A file holds one kind of code, and its name says which. A header has the name
+of its `.c`.
+
+| Name | Kind | Needs the board |
+|------|------|-----------------|
+| `<module>_driver.c` | **Driver.** Operates a device: a peripheral of the microcontroller through the HAL, or a part wired to it through another driver | Yes |
+| `<module>_<job>.c` | **One job, no hardware.** Maths, joining bytes into values, finding the end of a line, numbers to text, comparing times. Named after the job | No, it builds on a PC as it stands |
+| `<module>.c` | **Sits on a driver.** Uses a driver to offer something that is not a device: lines over a UART, text on the debug output | Yes |
+
+```
+lib/
+  gpio/     gpio_driver.c           port clocks and pin set-up, used by the drivers below
+  uart/     uart_driver.c           the UART peripheral
+  i2c/      i2c_driver.c            the I2C peripheral
+  led/      led_driver.c            the LED's pin
+  clock/    clock_driver.c          the system clock
+  bme280/   bme280_driver.c         talks to the sensor over I2C
+            bme280_raw.c            a measurement's bytes to raw values
+            bme280_calibration.c    the calibration bytes to calibration values
+            bme280_compensation.c   raw values to real units
+  link/     link.c                  sends and receives lines over the UART
+            link_framing.c          collects received bytes into a line
+  debug/    debug.c                 writes text and numbers to the debug UART
+  format/   format_number.c         a number to decimal or hexadecimal text
+  time/     time_interval.c         whether an interval has passed since an earlier moment
+```
+
 ## Drivers
 
 - Peripherals are driven through the STM32Cube HAL.

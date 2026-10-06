@@ -6,13 +6,14 @@
 
 #include "stm32f4xx_hal.h"
 
-#include "bme280.h"
+#include "bme280_driver.h"
 #include "bme280_calibration.h"
 #include "bme280_compensation.h"
 #include "board.h"
 #include "config.h"
 #include "debug.h"
 #include "reading.h"
+#include "time_interval.h"
 
 // The sensor's calibration values, read once at start-up
 static bme280_calibration_t calibration;
@@ -153,7 +154,7 @@ void sensor_poll(void)
     static uint32_t last_read_ms = 0;
     bme280_raw_t raw;
 
-    if (HAL_GetTick() - last_read_ms < SENSOR_READ_INTERVAL_MS) {
+    if (!time_interval_passed(HAL_GetTick(), last_read_ms, SENSOR_READ_INTERVAL_MS)) {
         return;
     }
     last_read_ms = HAL_GetTick();
