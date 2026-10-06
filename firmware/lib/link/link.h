@@ -3,10 +3,8 @@
 
 #include <stdbool.h>
 
-#include "uart.h"
-
-// Longest line in either direction, in characters, not counting the '\n' (same as the bridge)
-#define LINK_LINE_MAX_LEN 127
+#include "link_framing.h"
+#include "uart_driver.h"
 
 /**
  * @brief Sets up the link to the Wi-Fi bridge, which carries the protocol lines.

@@ -57,6 +57,8 @@ What this project uses and how it is put together: the decisions made and still 
 - STM32Cube HAL for the peripherals
 - PlatformIO as the build tool, with the set-up code written by hand
 - Drivers and building blocks in `firmware/lib/`, application code in `firmware/src/app/`, the application's headers in `firmware/include/`
+- One folder per library; a file's name says whether it operates a device, does one job with no hardware, or sits on a driver
+- Number-to-text conversion in one library, `format`
 - Every pin assignment in `board.h`; the libraries are given their pins when they are set up
 - Tunable values in `config.h`
 - The internal 16 MHz oscillator as the system clock

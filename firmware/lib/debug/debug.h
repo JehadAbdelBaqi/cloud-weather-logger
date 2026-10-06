@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "uart.h"
+#include "uart_driver.h"
 
 /**
  * @brief Sets up the debug output: text sent to the PC's serial monitor through the ST-LINK.

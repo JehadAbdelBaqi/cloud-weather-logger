@@ -6,6 +6,7 @@
 #include "stm32f4xx_hal.h"
 
 #include "config.h"
+#include "format_number.h"
 #include "handshake.h"
 #include "link.h"
 
@@ -27,27 +28,6 @@ static void append_text(char *line, const char *text)
 }
 
 /**
- * @brief Adds a whole number, in decimal, to the end of a line.
- *
- * @param line  The line so far
- * @param value The number
- */
-static void append_number(char *line, uint32_t value)
-{
-    char text[11];  // 10 digits at most, then the ending '\0'
-    char *digit = &text[sizeof(text) - 1];
-
-    *digit = '\0';
-    do {
-        digit--;
-        *digit = (char)('0' + value % 10);
-        value /= 10;
-    } while (value > 0);
-
-    append_text(line, digit);
-}
-
-/**
  * @brief Adds a field to the end of a line: a comma, then a whole number.
  *
  * @param line  The line so far
@@ -55,8 +35,11 @@ static void append_number(char *line, uint32_t value)
  */
 static void append_field(char *line, uint32_t value)
 {
+    char text[FORMAT_NUMBER_SIZE];
+
+    format_number(value, text);
     append_text(line, ",");
-    append_number(line, value);
+    append_text(line, text);
 }
 
 /**
@@ -67,14 +50,11 @@ static void append_field(char *line, uint32_t value)
  */
 static void append_signed_field(char *line, int32_t value)
 {
-    uint32_t size = (uint32_t)value;
+    char text[FORMAT_SIGNED_SIZE];
 
+    format_signed(value, text);
     append_text(line, ",");
-    if (value < 0) {
-        append_text(line, "-");
-        size = 0u - size;
-    }
-    append_number(line, size);
+    append_text(line, text);
 }
 
 /**
