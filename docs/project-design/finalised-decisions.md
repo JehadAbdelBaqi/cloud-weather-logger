@@ -64,6 +64,7 @@ What this project uses and how it is put together: the decisions made and still 
 - Every pin assignment in `board_config.h`; the libraries are given their pins when they are set up
 - Tunable values in `config.h`
 - The protocol's line types and fixed words in `protocol.h`
+- The commands in a table of words and the functions that carry them out
 - The MQTT topics in `topic_routes.h`
 - A value is defined once; the bridge is handed its settings in `bridge_config.h`, filled from the project's own definitions
 - One set of link settings and handshake timings for both boards

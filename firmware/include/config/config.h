@@ -12,8 +12,12 @@
 #define LED_CONNECTING_BLINK_MS 100
 #define LED_CONNECTED_BLINK_MS  500
 
-// How often the sensor is read
+// How often the sensor is read, until a "rate" command changes it
 #define SENSOR_READ_INTERVAL_MS 2000
+
+// The shortest and longest interval a "rate" command may set, in seconds
+#define SENSOR_READ_INTERVAL_MIN_S 1
+#define SENSOR_READ_INTERVAL_MAX_S 3600
 
 // Stand-in for the time of a reading until the RTC is set up: the time starts here at every
 // power-on and counts up. Unix time in seconds: 5 October 2026, 00:00 UK time

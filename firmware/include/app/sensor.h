@@ -1,6 +1,9 @@
 #ifndef SENSOR_H
 #define SENSOR_H
 
+#include <stdbool.h>
+#include <stdint.h>
+
 /**
  * @brief Finds the BME280 and reads its calibration values, writing both to the debug output.
  *
@@ -16,5 +19,22 @@ void sensor_init(void);
  * measurement itself takes about 10 ms.
  */
 void sensor_poll(void);
+
+/**
+ * @brief Takes a measurement now, writes it to the debug output and sends it to the bridge.
+ *
+ * Takes about 10 ms. The timed readings carry on as before.
+ *
+ * @return true if the reading was taken and sent
+ */
+bool sensor_read_now(void);
+
+/**
+ * @brief Sets how often sensor_poll() takes a reading.
+ *
+ * @param seconds The interval, from SENSOR_READ_INTERVAL_MIN_S to SENSOR_READ_INTERVAL_MAX_S
+ * @return true if the interval was set, false if it is outside those limits
+ */
+bool sensor_set_interval(uint32_t seconds);
 
 #endif

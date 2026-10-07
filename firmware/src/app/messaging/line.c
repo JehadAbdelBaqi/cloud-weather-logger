@@ -69,3 +69,61 @@ bool message_word_is(const char *line, const char *word)
     }
     return strcmp(field, word) == 0;
 }
+
+bool line_copy_field(const char *line, size_t index, char *text, size_t size)
+{
+    size_t length = 0;
+    const char *field = line_field(line, index, &length);
+
+    if (field == NULL) {
+        return false;
+    }
+    if (length >= size) {
+        return false;
+    }
+
+    memcpy(text, field, length);
+    text[length] = '\0';
+    return true;
+}
+
+bool line_take_word(const char *text, const char *word, const char **rest)
+{
+    size_t length = strlen(word);
+
+    if (strncmp(text, word, length) != 0) {
+        return false;
+    }
+    if (text[length] == '\0') {
+        *rest = NULL;
+        return true;
+    }
+    if (text[length] != ' ') {
+        return false;
+    }
+
+    *rest = &text[length + 1];
+    return true;
+}
+
+bool line_read_number(const char *text, uint32_t *value)
+{
+    uint64_t total = 0;
+
+    if (*text == '\0') {
+        return false;
+    }
+
+    for (; *text != '\0'; text++) {
+        if (*text < '0' || *text > '9') {
+            return false;
+        }
+        total = total * 10 + (uint64_t)(*text - '0');
+        if (total > UINT32_MAX) {
+            return false;
+        }
+    }
+
+    *value = (uint32_t)total;
+    return true;
+}

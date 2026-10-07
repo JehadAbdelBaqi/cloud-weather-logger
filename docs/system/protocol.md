@@ -66,15 +66,39 @@ R,<id>,err <reason>   up
 R,<id>,<text>         up
 ```
 
-The `id` is echoed in the reply, matching it to its command.
+The `id` is echoed in the reply, matching it to its command. It is chosen by
+whoever sends the command: any text of 1 to 16 characters with no comma in it.
 
 | Command | Does | Reply |
 |---------|------|-------|
-| `help` | Lists the commands | `R,<id>,<text>` |
-| `read` | Takes a reading now | A normal `W` line, plus `R,<id>,ok` |
-| `rate <s>` | Sets the sample interval in seconds | `R,<id>,ok` |
+| `help` | Lists the commands | `R,<id>,help read rate <s>` |
+| `read` | Takes a reading now | A normal `W` line, then `R,<id>,ok` |
+| `rate <s>` | Sets how often readings are taken, in whole seconds from 1 to 3600 | `R,<id>,ok` |
 
-A reading taken by `read` is stored, acked and graphed like any other.
+A reading taken by `read` is stored, acked and graphed like any other. The
+timed readings carry on at their own times.
+
+```
+C,7,rate 10      →   R,7,ok          a reading every 10 s from now on
+C,8,read         →   W,...  then  R,8,ok
+C,9,reboot       →   R,9,err unknown command
+```
+
+When a command cannot be carried out:
+
+| Reply | When |
+|-------|------|
+| `R,<id>,err unknown command` | The command is not one of the three. They are written in small letters |
+| `R,<id>,err no command` | The line has an ID and nothing after it |
+| `R,<id>,err rate needs a number of seconds` | `rate` with no value, or one that is not a whole number |
+| `R,<id>,err rate out of range` | `rate` below 1 or above 3600 |
+| `R,<id>,err no reading` | `read`, but the sensor could not be read or the reading could not be sent |
+| No reply | The line has no ID, or one longer than 16 characters: there is nothing to answer with |
+
+- **The interval set by `rate` lasts until the Nucleo restarts**, when it goes
+  back to the 2 s it is built with.
+- **A reply is only sent while the connection to the bridge is made**, like a
+  reading.
 
 ## `H` — handshake
 

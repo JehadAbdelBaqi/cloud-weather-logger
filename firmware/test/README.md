@@ -28,7 +28,8 @@ folder named after its library, or `app/` for the application.
 
 ```
 test/
-  app/      test_line/                 building a protocol line, finding its fields, checking its word
+  app/      test_line/                 building a protocol line, finding and copying its fields,
+                                       checking a word, reading a number
   bme280/   test_bme280_raw/           measurement bytes to raw values
             test_bme280_calibration/   calibration bytes to calibration values
             test_bme280_compensation/  raw values to real units

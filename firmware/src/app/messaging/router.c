@@ -20,6 +20,7 @@ typedef struct {
 // The lines the Nucleo receives, and the handler for each
 static const route_t routes[] = {
     { PROTOCOL_LETTER_HANDSHAKE, handle_handshake },
+    { PROTOCOL_LETTER_COMMAND,   handle_command },
 };
 
 #define ROUTE_COUNT (sizeof(routes) / sizeof(routes[0]))

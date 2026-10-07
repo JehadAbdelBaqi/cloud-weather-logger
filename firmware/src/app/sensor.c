@@ -16,6 +16,9 @@
 #include "reading.h"
 #include "time_interval.h"
 
+// How often sensor_poll() takes a reading, in milliseconds
+static uint32_t read_interval_ms = SENSOR_READ_INTERVAL_MS;
+
 // The sensor's calibration values, read once at start-up
 static bme280_calibration_t calibration;
 static bool calibration_read = false;
@@ -135,13 +138,15 @@ static void show_reading(const reading_t *reading)
  * @brief Sends a reading to the bridge, and says on the debug output if it could not be sent.
  *
  * @param reading The reading
+ * @return true if it was sent
  */
-static void send_reading(const reading_t *reading)
+static bool send_reading(const reading_t *reading)
 {
     if (handle_reading(reading)) {
-        return;
+        return true;
     }
     debug_print("reading not sent\r\n");
+    return false;
 }
 
 void sensor_init(void)
@@ -153,25 +158,44 @@ void sensor_init(void)
 void sensor_poll(void)
 {
     static uint32_t last_read_ms = 0;
-    bme280_raw_t raw;
 
-    if (!time_interval_passed(HAL_GetTick(), last_read_ms, SENSOR_READ_INTERVAL_MS)) {
+    if (!time_interval_passed(HAL_GetTick(), last_read_ms, read_interval_ms)) {
         return;
     }
     last_read_ms = HAL_GetTick();
 
+    sensor_read_now();
+}
+
+bool sensor_read_now(void)
+{
+    bme280_raw_t raw;
+
     if (!bme280_read_raw(&raw)) {
         debug_print("raw: the sensor could not be read\r\n");
-        return;
+        return false;
     }
 
     show_raw(&raw);
     if (!calibration_read) {
-        return;  // no real units without the calibration values
+        return false;  // no real units without the calibration values
     }
 
     reading_t reading;
     compensate(&raw, &reading);
     show_reading(&reading);
-    send_reading(&reading);
+    return send_reading(&reading);
+}
+
+bool sensor_set_interval(uint32_t seconds)
+{
+    if (seconds < SENSOR_READ_INTERVAL_MIN_S) {
+        return false;
+    }
+    if (seconds > SENSOR_READ_INTERVAL_MAX_S) {
+        return false;
+    }
+
+    read_interval_ms = seconds * 1000;
+    return true;
 }

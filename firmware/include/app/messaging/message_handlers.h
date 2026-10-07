@@ -18,6 +18,16 @@
 void handle_handshake(const char *line);
 
 /**
+ * @brief Deals with a command received from the server: C,<id>,<command>.
+ *
+ * The command is carried out and answered with a reply line that carries the same ID. A command
+ * with no ID cannot be answered, so it is ignored.
+ *
+ * @param line The line received, starting with PROTOCOL_LETTER_COMMAND
+ */
+void handle_command(const char *line);
+
+/**
  * @brief Sends a reading to the bridge as a reading line: W,<seq>,<epoch>,<t>,<p>,<rh>.
  *
  * Gives the reading the next sequence number, which starts at 1 at power-on. Nothing is sent

@@ -62,6 +62,42 @@ bool line_add_signed(char *line, int32_t value);
 const char *line_field(const char *line, size_t index, size_t *length);
 
 /**
+ * @brief Copies a field of a line into a buffer of its own, ending in '\0'.
+ *
+ * @param line  The line, ending in '\0'
+ * @param index Which field: 0 is the first one after the letter
+ * @param text  Filled in with the field
+ * @param size  The size of text, in characters, counting the ending '\0'
+ * @return true if the field was copied; false if the line has no such field or it does not fit
+ */
+bool line_copy_field(const char *line, size_t index, char *text, size_t size);
+
+/**
+ * @brief Says whether a text starts with a given word, and finds what follows it.
+ *
+ * The word has to be the whole text, or be followed by a space: "rate 10" starts with "rate",
+ * and "rated" does not.
+ *
+ * @param text The text, ending in '\0'
+ * @param word The word to look for
+ * @param rest Filled in with where the text carries on after the word and its space, or NULL if
+ *             the word is the whole text
+ * @return true if the text starts with the word
+ */
+bool line_take_word(const char *text, const char *word, const char **rest);
+
+/**
+ * @brief Reads a whole number written in decimal.
+ *
+ * The text has to be digits and nothing else, and the number has to fit in 32 bits.
+ *
+ * @param text  The text, ending in '\0'
+ * @param value Filled in with the number
+ * @return true if the text was a number
+ */
+bool line_read_number(const char *text, uint32_t *value);
+
+/**
  * @brief Says whether a line carries a given word, and nothing else, after its letter.
  *
  * Works for a line of any type: "H,ack" carries "ack", and so would "X,ack".

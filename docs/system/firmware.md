@@ -41,8 +41,8 @@ includes no code, so the bridge's build can read them as well as the Nucleo's.
 | File | Holds |
 |------|-------|
 | `board_config.h` | How the board is wired: every pin assignment, and the baud rate and line limit of the link to the bridge |
-| `config.h` | Tunable timings: the handshake's three values, the LED's blink times, how often the sensor is read |
-| `protocol.h` | The letter of each line type, the field separator and the fixed words |
+| `config.h` | Tunable timings: the handshake's three values, the LED's blink times, how often the sensor is read and the limits a `rate` command may set |
+| `protocol.h` | The letter of each line type, the field separator, the command words and the fixed words |
 | `topic_routes.h` | The MQTT topic for each line type that goes through the broker |
 | `bridge_config.h` | What is handed to the bridge's build |
 
@@ -77,9 +77,10 @@ functions.
 | File | Job | Needs the board |
 |------|-----|-----------------|
 | `router.c` | Takes each line that arrives and hands it to the handler for its first letter | Yes |
-| `message_handlers.c` | One complete handler for each line type: the handshake, a reading | Yes |
-| `message_helpers.c` | What the handlers share that touches the hardware: sending a line of one word, the time for a reading | Yes |
-| `line.c` | Text work on a line: start it, add a field, find a field, check its word | No, it builds on a PC as it stands |
+| `message_handlers.c` | One complete handler for each line type: the handshake, a command, a reading | Yes |
+| `commands.c` | The table of commands, and what each one does and replies | Yes |
+| `message_helpers.c` | What the handlers share that touches the hardware: sending a line of one word, sending a reply, the time for a reading | Yes |
+| `line.c` | Text work on a line: start it, add a field, find or copy a field, check its word, read a number | No, it builds on a PC as it stands |
 | `polling.c` | Asks the bridge whether it is there, on a timer, and notices when it stops answering | Yes |
 | `bridge_connection.c` | Whether the connection to the bridge is made | Yes |
 
@@ -192,7 +193,27 @@ Touch is not used.
 ## Commands
 
 `help`, `read`, `rate <s>` — arriving as `C` lines from the server, through the
-broker and the bridge. Formats in [protocol.md](protocol.md).
+broker and the bridge, and each answered with an `R` line. Formats and replies
+in [protocol.md](protocol.md#c--r--commands-and-replies).
+
+```
+C line arrives
+   │
+router            finds the handler for the letter C
+   │
+handle_command    takes out the ID and the command; a line with no ID is ignored
+   │
+commands_run      finds the command's word in a table and runs its function
+   │
+send_reply        R,<id>,<result>
+```
+
+- **The commands are a table** of a word and the function that carries it out,
+  in `commands.c`. A new command is one function and one row.
+- **`read` uses the same code as a timed reading**, so what it sends is a
+  normal `W` line with the next sequence number.
+- **`rate` changes the interval in memory**, within the limits in `config.h`.
+  It is not kept across a restart.
 
 ## Testing
 

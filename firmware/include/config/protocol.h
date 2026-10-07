@@ -17,6 +17,11 @@
 #define PROTOCOL_HANDSHAKE_REQUEST "request"  // "are you there?"
 #define PROTOCOL_HANDSHAKE_ACK     "ack"      // "I am here"
 
+// Command: C,<id>,<command>, where the command is one of these words, with a value after "rate"
+#define PROTOCOL_COMMAND_HELP "help"  // lists the commands
+#define PROTOCOL_COMMAND_READ "read"  // takes a reading now
+#define PROTOCOL_COMMAND_RATE "rate"  // sets how often readings are taken: rate <seconds>
+
 // Reply: R,<id>,<result>, where the result is one of these words or free text
 #define PROTOCOL_REPLY_OK  "ok"
 #define PROTOCOL_REPLY_ERR "err"  // followed by a space and the reason

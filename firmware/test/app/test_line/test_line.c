@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <unity.h>
@@ -255,6 +256,174 @@ static void test_empty_line_carries_no_word(void)
     TEST_ASSERT_FALSE(message_word_is("", "ack"));
 }
 
+/** A field is copied out with an ending of its own. */
+static void test_copy_field(void)
+{
+    char text[8];
+
+    TEST_ASSERT_TRUE(line_copy_field("C,7,rate 10", 0, text, sizeof(text)));
+    TEST_ASSERT_EQUAL_STRING("7", text);
+}
+
+/** The last field is copied up to the end of the line. */
+static void test_copy_last_field(void)
+{
+    char text[8];
+
+    TEST_ASSERT_TRUE(line_copy_field("C,7,rate 10", 1, text, sizeof(text)));
+    TEST_ASSERT_EQUAL_STRING("rate 10", text);
+}
+
+/** A field that exactly fills the buffer, with its ending, is copied. */
+static void test_copy_field_that_just_fits(void)
+{
+    char text[4];
+
+    TEST_ASSERT_TRUE(line_copy_field("C,abc,help", 0, text, sizeof(text)));
+    TEST_ASSERT_EQUAL_STRING("abc", text);
+}
+
+/** A field too long for the buffer is not copied, not cut short. */
+static void test_copy_field_too_long(void)
+{
+    char text[4];
+
+    TEST_ASSERT_FALSE(line_copy_field("C,abcd,help", 0, text, sizeof(text)));
+}
+
+/** A field the line does not have is not copied. */
+static void test_copy_missing_field(void)
+{
+    char text[8];
+
+    TEST_ASSERT_FALSE(line_copy_field("C", 0, text, sizeof(text)));
+    TEST_ASSERT_FALSE(line_copy_field("C,7", 1, text, sizeof(text)));
+}
+
+/** A field with nothing in it is copied as an empty text. */
+static void test_copy_empty_field(void)
+{
+    char text[8] = "x";
+
+    TEST_ASSERT_TRUE(line_copy_field("C,,help", 0, text, sizeof(text)));
+    TEST_ASSERT_EQUAL_STRING("", text);
+}
+
+/** A text that is the word and nothing else starts with it, and nothing follows. */
+static void test_take_word_alone(void)
+{
+    const char *rest = "unset";
+
+    TEST_ASSERT_TRUE(line_take_word("read", "read", &rest));
+    TEST_ASSERT_NULL(rest);
+}
+
+/** After the word and a space, the rest of the text is found. */
+static void test_take_word_with_a_value(void)
+{
+    const char *rest = NULL;
+
+    TEST_ASSERT_TRUE(line_take_word("rate 10", "rate", &rest));
+    TEST_ASSERT_EQUAL_STRING("10", rest);
+}
+
+/** A word and a space with nothing after them leaves an empty rest. */
+static void test_take_word_with_an_empty_value(void)
+{
+    const char *rest = NULL;
+
+    TEST_ASSERT_TRUE(line_take_word("rate ", "rate", &rest));
+    TEST_ASSERT_EQUAL_STRING("", rest);
+}
+
+/** A longer word that only starts the same is not the word. */
+static void test_take_word_rejects_a_longer_word(void)
+{
+    const char *rest = NULL;
+
+    TEST_ASSERT_FALSE(line_take_word("rated 10", "rate", &rest));
+    TEST_ASSERT_FALSE(line_take_word("reader", "read", &rest));
+}
+
+/** A different word, a shorter one and an empty text are not the word. */
+static void test_take_word_rejects_other_text(void)
+{
+    const char *rest = NULL;
+
+    TEST_ASSERT_FALSE(line_take_word("help", "read", &rest));
+    TEST_ASSERT_FALSE(line_take_word("rat", "rate", &rest));
+    TEST_ASSERT_FALSE(line_take_word("", "rate", &rest));
+}
+
+/** Capital letters are not the same word. */
+static void test_take_word_is_case_sensitive(void)
+{
+    const char *rest = NULL;
+
+    TEST_ASSERT_FALSE(line_take_word("READ", "read", &rest));
+}
+
+/** Digits are read as a number. */
+static void test_read_number(void)
+{
+    uint32_t value = 99;
+
+    TEST_ASSERT_TRUE(line_read_number("0", &value));
+    TEST_ASSERT_EQUAL_UINT32(0, value);
+    TEST_ASSERT_TRUE(line_read_number("10", &value));
+    TEST_ASSERT_EQUAL_UINT32(10, value);
+    TEST_ASSERT_TRUE(line_read_number("3600", &value));
+    TEST_ASSERT_EQUAL_UINT32(3600, value);
+}
+
+/** Zeros in front do not change the number. */
+static void test_read_number_with_leading_zeros(void)
+{
+    uint32_t value = 0;
+
+    TEST_ASSERT_TRUE(line_read_number("0010", &value));
+    TEST_ASSERT_EQUAL_UINT32(10, value);
+}
+
+/** The largest number that fits in 32 bits is read. */
+static void test_read_largest_number(void)
+{
+    uint32_t value = 0;
+
+    TEST_ASSERT_TRUE(line_read_number("4294967295", &value));
+    TEST_ASSERT_EQUAL_UINT32(UINT32_MAX, value);
+}
+
+/** A number too large for 32 bits is refused, not wrapped round. */
+static void test_read_number_too_large(void)
+{
+    uint32_t value = 0;
+
+    TEST_ASSERT_FALSE(line_read_number("4294967296", &value));
+    TEST_ASSERT_FALSE(line_read_number("99999999999999999999999", &value));
+}
+
+/** An empty text is not a number. */
+static void test_read_number_from_nothing(void)
+{
+    uint32_t value = 0;
+
+    TEST_ASSERT_FALSE(line_read_number("", &value));
+}
+
+/** Anything that is not a digit makes the text not a number. */
+static void test_read_number_rejects_other_characters(void)
+{
+    uint32_t value = 0;
+
+    TEST_ASSERT_FALSE(line_read_number("ten", &value));
+    TEST_ASSERT_FALSE(line_read_number("10s", &value));
+    TEST_ASSERT_FALSE(line_read_number("-5", &value));
+    TEST_ASSERT_FALSE(line_read_number("1.5", &value));
+    TEST_ASSERT_FALSE(line_read_number(" 10", &value));
+    TEST_ASSERT_FALSE(line_read_number("10 ", &value));
+}
+
 /** Runs every test in this file. */
 int main(void)
 {
@@ -290,6 +459,27 @@ int main(void)
     RUN_TEST(test_word_in_a_later_field_is_not_a_match);
     RUN_TEST(test_letter_alone_carries_no_word);
     RUN_TEST(test_empty_line_carries_no_word);
+
+    RUN_TEST(test_copy_field);
+    RUN_TEST(test_copy_last_field);
+    RUN_TEST(test_copy_field_that_just_fits);
+    RUN_TEST(test_copy_field_too_long);
+    RUN_TEST(test_copy_missing_field);
+    RUN_TEST(test_copy_empty_field);
+
+    RUN_TEST(test_take_word_alone);
+    RUN_TEST(test_take_word_with_a_value);
+    RUN_TEST(test_take_word_with_an_empty_value);
+    RUN_TEST(test_take_word_rejects_a_longer_word);
+    RUN_TEST(test_take_word_rejects_other_text);
+    RUN_TEST(test_take_word_is_case_sensitive);
+
+    RUN_TEST(test_read_number);
+    RUN_TEST(test_read_number_with_leading_zeros);
+    RUN_TEST(test_read_largest_number);
+    RUN_TEST(test_read_number_too_large);
+    RUN_TEST(test_read_number_from_nothing);
+    RUN_TEST(test_read_number_rejects_other_characters);
 
     return UNITY_END();
 }
