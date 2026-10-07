@@ -13,6 +13,9 @@ From `firmware/`:
 pio test -e native
 ```
 
+They also run as the first step of `scripts/build.sh`, before either board is
+built.
+
 One test folder alone:
 
 ```

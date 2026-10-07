@@ -78,6 +78,8 @@ What this project uses and how it is put together: the decisions made and still 
 - The sequence number starts again at power-on
 - Unit tests on the PC, for the code that touches no hardware, written alongside new logic
 - Unity as the test framework, run by PlatformIO
+- A test of the running boards through the broker, as the last step of the build script
+- A short report at the end of a build: one line for each step and check
 
 ## The server
 

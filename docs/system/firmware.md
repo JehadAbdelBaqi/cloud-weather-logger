@@ -219,8 +219,26 @@ send_reply        R,<id>,<result>
 
 - **Unit tests on the PC** — for the code with no hardware in it, in the
   libraries and in the application, run with `pio test -e native` from
-  `firmware/`. See
+  `firmware/`. They are also the first step of `scripts/build.sh`
+  (`steps/unit-tests.sh`), so a failing test stops a build before anything is
+  uploaded. See
   [firmware/test/README.md](../../firmware/test/README.md).
+- **A test of the running boards, through the broker** — `scripts/steps/test-nucleo.sh`,
+  the last step of `scripts/build.sh`. With both boards running and the broker
+  reachable it checks, in order:
+
+  | Check | Proves |
+  |-------|--------|
+  | A reading arrives on the readings topic within 60 s | The sensor is read, the handshake with the bridge is made, and a line gets all the way up |
+  | `help`, `read` and an unknown command each get the reply expected | A command gets down to the Nucleo and its reply gets back up, with the same ID |
+  | `rate` with no value, and `rate 0`, are refused with their own replies | The checks on a command's value |
+  | After `rate 5`, two readings in a row are at least 4 s apart | The command really changes how often readings are taken |
+
+  It ends by setting the rate back to 2 s. Each of the three groups of checks
+  is a line in the report that `build.sh` prints when it ends: one line for
+  each step that ran, on both boards, with `success`, `FAILED` or `not run`. The topics are read from
+  `firmware/include/config/topic_routes.h`, and the checks themselves are the
+  bridge's own test helpers, used with this project's topics.
 - **Hardware-in-the-loop test in CI** — see [deployment.md](deployment.md).
 
 ## See also
