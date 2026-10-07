@@ -55,7 +55,8 @@ held in memory while offline, sent over MQTT to a Docker stack
 |-----|--------|
 | [docs/system/architecture.md](docs/system/architecture.md) | The pieces, how data flows, local vs cloud |
 | [docs/system/protocol.md](docs/system/protocol.md) | The UART line format between the Nucleo and the bridge |
-| [docs/system/firmware.md](docs/system/firmware.md) | The Nucleo firmware: peripherals, store-and-forward, time, screen |
+| [docs/system/firmware.md](docs/system/firmware.md) | The Nucleo firmware: code layout, config, peripherals, store-and-forward, time, screen |
+| [firmware/test/README.md](firmware/test/README.md) | The firmware's unit tests: running them, what they cover, adding one |
 | [docs/system/server.md](docs/system/server.md) | The Linux host and the Docker stack |
 | [docs/system/deployment.md](docs/system/deployment.md) | Provisioning, releases, CI and the cloud infrastructure |
 | [docs/project-design/decision_logs.md](docs/project-design/decision_logs.md) | The log of design decisions, in the order they were made, and why |

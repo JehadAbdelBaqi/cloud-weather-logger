@@ -21,7 +21,9 @@ PlatformIO (`framework = stm32cube`).
 firmware/
   src/main.c     set-up, then the main loop
   src/app/       the application: what this program does with the libraries
-  include/       the application's headers, board.h (pins) and config.h (tunable values)
+  src/app/messaging/   the lines to and from the bridge
+  include/config/      the project's values: no code behind them
+  include/app/         the headers of the files in src/app/, folder for folder
   lib/           the libraries, one folder per module
 ```
 
@@ -30,6 +32,61 @@ firmware/
   is set up.
 - **The application uses the libraries.** It decides when a reading is taken,
   what is sent and what the LED shows.
+
+### Config
+
+`include/config/` holds the project's values. Each file is `#define`s only and
+includes no code, so the bridge's build can read them as well as the Nucleo's.
+
+| File | Holds |
+|------|-------|
+| `board_config.h` | How the board is wired: every pin assignment, and the baud rate and line limit of the link to the bridge |
+| `config.h` | Tunable timings: the handshake's three values, the LED's blink times, how often the sensor is read and the limits a `rate` command may set |
+| `protocol.h` | The letter of each line type, the field separator, the command words and the fixed words |
+| `topic_routes.h` | The MQTT topic for each line type that goes through the broker |
+| `bridge_config.h` | What is handed to the bridge's build |
+
+- **A value is defined once.** A file that needs one defined elsewhere takes it
+  from there.
+- **`bridge_config.h` defines almost nothing itself.** It gives the bridge the
+  names the bridge looks for, each filled from the project's own definition:
+
+| The bridge's setting | Comes from |
+|----------------------|------------|
+| `UART_BAUD`, `LINE_MAX_LEN` | `LINK_BAUD` and `LINK_LINE_LIMIT` in `board_config.h` |
+| `UPLINK_ROUTES` | The letters in `protocol.h`, paired with the topics in `topic_routes.h` |
+| `DOWNLINK_TOPICS` | The topics in `topic_routes.h` |
+| The three handshake timings | `config.h`, under the same names the bridge reads |
+| `LOG_LINES` | Set in `bridge_config.h`; it is the bridge's own |
+
+- **Both boards are built with the same link settings and handshake timings**,
+  so the two ends cannot drift apart. What each handshake timing does, and
+  what changing it means, is in [protocol.md](protocol.md#h--handshake).
+- **The `link` library keeps a line limit of its own**, because a library does
+  not read the project's files. The build stops if it differs from
+  `LINK_LINE_LIMIT`.
+- **`board.h` is not one of these.** It declares the two set-up functions in
+  `board.c`, and is in `include/app/` with the other headers.
+
+### Messaging
+
+Everything about the lines exchanged with the bridge is in `src/app/messaging/`.
+Each line type has one handler, and the handlers are built from small shared
+functions.
+
+| File | Job | Needs the board |
+|------|-----|-----------------|
+| `router.c` | Takes each line that arrives and hands it to the handler for its first letter | Yes |
+| `message_handlers.c` | One complete handler for each line type: the handshake, a command, a reading | Yes |
+| `commands.c` | The table of commands, and what each one does and replies | Yes |
+| `message_helpers.c` | What the handlers share that touches the hardware: sending a line of one word, sending a reply, the time for a reading | Yes |
+| `line.c` | Text work on a line: start it, add a field, find or copy a field, check its word, read a number | No, it builds on a PC as it stands |
+| `polling.c` | Asks the bridge whether it is there, on a timer, and notices when it stops answering | Yes |
+| `bridge_connection.c` | Whether the connection to the bridge is made | Yes |
+
+The letters of the line types and the fixed words are defined once, in
+`include/config/protocol.h`, and the bridge's routing table is built from the
+same letters (see [Config](#config)).
 
 ### Libraries
 
@@ -136,10 +193,52 @@ Touch is not used.
 ## Commands
 
 `help`, `read`, `rate <s>` — arriving as `C` lines from the server, through the
-broker and the bridge. Formats in [protocol.md](protocol.md).
+broker and the bridge, and each answered with an `R` line. Formats and replies
+in [protocol.md](protocol.md#c--r--commands-and-replies).
+
+```
+C line arrives
+   │
+router            finds the handler for the letter C
+   │
+handle_command    takes out the ID and the command; a line with no ID is ignored
+   │
+commands_run      finds the command's word in a table and runs its function
+   │
+send_reply        R,<id>,<result>
+```
+
+- **The commands are a table** of a word and the function that carries it out,
+  in `commands.c`. A new command is one function and one row.
+- **`read` uses the same code as a timed reading**, so what it sends is a
+  normal `W` line with the next sequence number.
+- **`rate` changes the interval in memory**, within the limits in `config.h`.
+  It is not kept across a restart.
 
 ## Testing
 
+- **Unit tests on the PC** — for the code with no hardware in it, in the
+  libraries and in the application, run with `pio test -e native` from
+  `firmware/`. They are also the first step of `scripts/build.sh`
+  (`steps/unit-tests.sh`), so a failing test stops a build before anything is
+  uploaded. See
+  [firmware/test/README.md](../../firmware/test/README.md).
+- **A test of the running boards, through the broker** — `scripts/steps/test-nucleo.sh`,
+  the last step of `scripts/build.sh`. With both boards running and the broker
+  reachable it checks, in order:
+
+  | Check | Proves |
+  |-------|--------|
+  | A reading arrives on the readings topic within 60 s | The sensor is read, the handshake with the bridge is made, and a line gets all the way up |
+  | `help`, `read` and an unknown command each get the reply expected | A command gets down to the Nucleo and its reply gets back up, with the same ID |
+  | `rate` with no value, and `rate 0`, are refused with their own replies | The checks on a command's value |
+  | After `rate 5`, two readings in a row are at least 4 s apart | The command really changes how often readings are taken |
+
+  It ends by setting the rate back to 2 s. Each of the three groups of checks
+  is a line in the report that `build.sh` prints when it ends: one line for
+  each step that ran, on both boards, with `success`, `FAILED` or `not run`. The topics are read from
+  `firmware/include/config/topic_routes.h`, and the checks themselves are the
+  bridge's own test helpers, used with this project's topics.
 - **Hardware-in-the-loop test in CI** — see [deployment.md](deployment.md).
 
 ## See also

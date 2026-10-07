@@ -3,8 +3,10 @@
 
 # This project's steps, run by build.sh
 PROJECT_STEPS=(
+    "1 steps/unit-tests.sh"
     "1 steps/build-and-upload-nucleo.sh"
     "1 steps/build-and-upload-bridge.sh"
+    "1 steps/test-nucleo.sh"
 )
 
 # The bridge's steps, run by the bridge's own e2e.sh when build-and-upload-bridge.sh is on
@@ -12,7 +14,8 @@ STEPS=(
     "0 steps/nuke.sh"
     "0 steps/clean-build.sh"
     "1 steps/create-vm.sh"
-    "1 steps/setup-certs.sh --keep-alive"
+    "1 steps/setup-certs.sh"
+    "1 steps/set-port-rule.sh"
     "1 steps/build-and-upload.sh"
 )
 
