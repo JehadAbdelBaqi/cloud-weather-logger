@@ -19,6 +19,24 @@ topic_from_header() {
     echo "$topic"
 }
 
+# Prints the number a name is defined as in the firmware's config.h, so a value the firmware is
+# built with is not written a second time in the tests.
+# Arguments: <config.h> <name, e.g. SENSOR_READ_INTERVAL_MS>
+number_from_header() {
+    local header="$1"
+    local name="$2"
+    local number
+
+    number=$(grep -E "^#define ${name}[[:space:]]" "$header" | awk '{ print $3 }')
+
+    if [ -z "$number" ]; then
+        echo "$name was not found in $header." >&2
+        exit 1
+    fi
+
+    echo "$number"
+}
+
 # Stops the script unless a reading arrives from the Nucleo in time. A reading is only sent once
 # the handshake with the bridge is made, so this proves the sensor, the handshake and the whole
 # way up to the broker.
@@ -90,19 +108,26 @@ check_reading_gap() {
 # Stops the script unless each kind of command gets the reply expected: one that works, one that
 # is not known, and two with a value that is refused.
 # Arguments: <project name> <address> <port> <commands topic> <replies topic>
+#            <longest interval the rate command allows, in seconds>
 check_commands_answered() {
+    local too_long=$(($6 + 1))
+
     check_command "$1" "$2" "$3" "$4" "$5" "help" "help read rate <s>"
     check_command "$1" "$2" "$3" "$4" "$5" "read" "ok"
     check_command "$1" "$2" "$3" "$4" "$5" "reboot" "err unknown command"
     check_command "$1" "$2" "$3" "$4" "$5" "rate" "err rate needs a number of seconds"
-    check_command "$1" "$2" "$3" "$4" "$5" "rate 0" "err rate out of range"
+    check_command "$1" "$2" "$3" "$4" "$5" "rate $too_long" "err rate out of range"
 }
 
-# Stops the script unless the rate command changes how often readings arrive. The built-in 5 s
-# is put back afterwards.
+# Stops the script unless the rate command changes how often readings arrive: the interval is
+# doubled, two readings are timed, and the interval the firmware is built with is put back.
 # Arguments: <project name> <address> <port> <commands topic> <replies topic> <readings topic>
+#            <interval the firmware is built with, in milliseconds>
 check_rate_changes_timing() {
-    check_command "$1" "$2" "$3" "$4" "$5" "rate 10" "ok"
-    check_reading_gap "$1" "$2" "$3" "$6" 9 40
-    check_command "$1" "$2" "$3" "$4" "$5" "rate 5" "ok"
+    local built_in_s=$(($7 / 1000))
+    local doubled_s=$((built_in_s * 2))
+
+    check_command "$1" "$2" "$3" "$4" "$5" "rate $doubled_s" "ok"
+    check_reading_gap "$1" "$2" "$3" "$6" $((doubled_s - 1)) $((doubled_s * 3 + 10))
+    check_command "$1" "$2" "$3" "$4" "$5" "rate $built_in_s" "ok"
 }

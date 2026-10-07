@@ -40,7 +40,7 @@ includes no code, so the bridge's build can read them as well as the Nucleo's.
 | File | Holds |
 |------|-------|
 | `board_config.h` | How the board is wired: every pin assignment, and the baud rate and line limit of the link to the bridge |
-| `config.h` | Tunable timings: the handshake's three values, the LED's blink times, how often the sensor is read and the limits a `rate` command may set |
+| `config.h` | Tunable timings: the handshake's three values, the LED's blink times, how often the sensor is read and the limits a `rate` command may set. These are choices, changed here at any time; the docs name them and do not repeat their values |
 | `protocol.h` | The letter of each line type, the field separator, the command words and the fixed words |
 | `topic_routes.h` | The MQTT topic for each line type that goes through the broker |
 | `bridge_config.h` | What is handed to the bridge's build |
@@ -198,7 +198,7 @@ the store and go out, oldest first, once the sender starts again.
 |---|---|
 | Where | The Nucleo's memory (RAM), about 50 KB set aside |
 | One reading | 20 bytes: sequence number, time, temperature, pressure, humidity |
-| Holds | About 2,500 readings: about three and a half hours at a reading every 5 s |
+| Holds | About 2,500 readings. How long that covers is 2,500 times the reading interval |
 | When full | No readings are taken until there is room again. Nothing already held is thrown away |
 | On a restart or a power cut | Everything in it is lost |
 
@@ -276,12 +276,14 @@ send_reply        R,<id>,<result>
 
   | Check | Proves |
   |-------|--------|
-  | A reading arrives on the readings topic within 60 s | The sensor is read, the handshake with the bridge is made, and a line gets all the way up |
+  | A reading arrives on the readings topic within the time the test allows | The sensor is read, the handshake with the bridge is made, and a line gets all the way up |
   | `help`, `read` and an unknown command each get the reply expected | A command gets down to the Nucleo and its reply gets back up, with the same ID |
   | `rate` with no value, and `rate 0`, are refused with their own replies | The checks on a command's value |
-  | After `rate 10`, two readings in a row are at least 9 s apart | The command really changes how often readings are taken |
+  | After `rate` is given twice the built-in interval, two readings in a row arrive that far apart | The command really changes how often readings are taken |
 
-  It ends by setting the rate back to 5 s. Each of the three groups of checks
+  It ends by putting the built-in interval back. The test reads that interval,
+  and the limit of `rate`, from `config.h`, so it follows whatever is set
+  there. Each of the three groups of checks
   is a line in the report that `build.sh` prints when it ends: one line for
   each step that ran, on both boards, with `success`, `FAILED` or `not run`. The topics are read from
   `firmware/include/config/topic_routes.h`, and the checks themselves are the

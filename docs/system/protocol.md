@@ -119,13 +119,13 @@ whoever sends the command: any text of 1 to 16 characters with no comma in it.
 |---------|------|-------|
 | `help` | Lists the commands | `R,<id>,help read rate <s>` |
 | `read` | Takes a reading now | A normal `W` line, then `R,<id>,ok` |
-| `rate <s>` | Sets how often readings are taken, in whole seconds from 1 to 3600 | `R,<id>,ok` |
+| `rate <s>` | Sets how often readings are taken, in whole seconds, within the limits set in the config | `R,<id>,ok` |
 
 A reading taken by `read` is stored, acked and graphed like any other. The
 timed readings carry on at their own times.
 
 ```
-C,7,rate 10      →   R,7,ok          a reading every 10 s from now on, in place of every 5 s
+C,7,rate 10      →   R,7,ok          a reading every 10 s from now on
 C,8,read         →   W,...  then  R,8,ok
 C,9,reboot       →   R,9,err unknown command
 ```
@@ -137,12 +137,15 @@ When a command cannot be carried out:
 | `R,<id>,err unknown command` | The command is not one of the three. They are written in small letters |
 | `R,<id>,err no command` | The line has an ID and nothing after it |
 | `R,<id>,err rate needs a number of seconds` | `rate` with no value, or one that is not a whole number |
-| `R,<id>,err rate out of range` | `rate` below 1 or above 3600 |
+| `R,<id>,err rate out of range` | `rate` below `SENSOR_READ_INTERVAL_MIN_S` or above `SENSOR_READ_INTERVAL_MAX_S` |
 | `R,<id>,err no reading` | `read`, but the sensor could not be read or the reading could not be sent |
 | No reply | The line has no ID, or one longer than 16 characters: there is nothing to answer with |
 
 - **The interval set by `rate` lasts until the Nucleo restarts**, when it goes
-  back to the 5 s it is built with.
+  back to the interval it is built with, `SENSOR_READ_INTERVAL_MS`.
+- **Every time here is a value in `firmware/include/config/config.h`**, not
+  part of the protocol: the interval the firmware is built with and the two
+  limits of `rate`. They are changed there.
 - **A reply is only sent while the connection to the bridge is made**, like a
   reading.
 
@@ -166,45 +169,46 @@ H,ack          the side that received H,request: "I am here"
   connection is made again at once when the bridge restarts.
 - **Made, on the bridge,** once it has received `H,ack`, or has received
   `H,request` and answered it.
-- **Not connected:** `H,request` is repeated every 2 s, for as long as it takes.
+- **Not connected:** `H,request` is repeated at the request interval, for as
+  long as it takes.
 - **Connected:** nothing is sent while lines keep arriving from the other side;
-  any line shows it is still there. After 3 s with none, `H,request` is sent
-  every 2 s. After 5 in a row go unanswered, the connection counts as lost.
-  A lost connection is noticed about 13 s after the last line.
+  any line shows it is still there. After the quiet limit with none,
+  `H,request` is sent at the request interval. After the missed limit of
+  requests in a row go unanswered, the connection counts as lost.
 - **Never published.** The bridge handles `H` lines itself; the letter `H` is
   reserved and has no topic.
 
 ### Timings
 
-Three values time the handshake. They are set once, in
-`firmware/include/config/config.h`, and **both boards are built with them**:
-the bridge is handed the same file. Changing one changes it on the Nucleo and
-on the bridge, and takes a rebuild and upload of both.
+Three values time the handshake. They are config, not part of the design:
+they are set once, in `firmware/include/config/config.h`, and are changed
+there. **Both boards are built with them**: the bridge is handed the same
+file. Changing one changes it on the Nucleo and on the bridge, and takes a
+rebuild and upload of both. This page does not give their values, so that it
+cannot disagree with the file.
 
-| Setting | Value | What it does | Raising it | Lowering it |
-|---------|-------|--------------|------------|-------------|
-| `HANDSHAKE_REQUEST_INTERVAL_MS` | 2000 | How often `H,request` is repeated while it goes unanswered | A board that has just started, or come back, takes longer to be found | Found sooner; more lines on the UART while the other board is away |
-| `HANDSHAKE_QUIET_LIMIT_MS` | 3000 | Once connected: how long with no line from the other board before it is asked | Fewer requests on a quiet link; a lost board is noticed later | A lost board is noticed sooner; a board with nothing to send is asked more often |
-| `HANDSHAKE_MISSED_LIMIT` | 5 | Unanswered requests in a row before the connection counts as lost | Rides out a longer gap without calling it lost; a real loss is noticed later | A loss is noticed sooner; a short gap, such as a board being restarted, may count as a loss |
+| Setting | What it does | Raising it | Lowering it |
+|---------|--------------|------------|-------------|
+| `HANDSHAKE_REQUEST_INTERVAL_MS` | How often `H,request` is repeated while it goes unanswered | A board that has just started, or come back, takes longer to be found | Found sooner; more lines on the UART while the other board is away |
+| `HANDSHAKE_QUIET_LIMIT_MS` | Once connected: how long with no line from the other board before it is asked | Fewer requests on a quiet link; a lost board is noticed later | A lost board is noticed sooner; a board with nothing to send is asked more often |
+| `HANDSHAKE_MISSED_LIMIT` | Unanswered requests in a row before the connection counts as lost | Rides out a longer gap without calling it lost; a real loss is noticed later | A loss is noticed sooner; a short gap, such as a board being restarted, may count as a loss |
 
 - **Time to notice a lost board**, counted from its last line: the quiet limit,
-  plus the missed limit times the request interval. With the values above that
-  is 3 s + 5 × 2 s = 13 s.
-- **The Nucleo asks about every 3 s while all is well.** The bridge sends
-  nothing down unless it has a line to pass on, so the Nucleo goes without
-  hearing from it for the quiet limit and asks.
-- **The bridge asks between readings too, as the values stand.** A reading
-  reaches it every 5 s (`SENSOR_READ_INTERVAL_MS`), which is longer than the
-  quiet limit of 3 s, so it goes quiet for long enough to ask. Each request is
-  answered at once, so the connection is not lost by it: the cost is extra
-  lines on the UART, and the bridge's LED flashing while it asks.
-- **A quiet limit above the reading interval stops the bridge asking** while
-  readings arrive on time.
+  plus the missed limit times the request interval.
+- **The Nucleo asks once every quiet limit while all is well.** The bridge
+  sends nothing down unless it has a line to pass on, so the Nucleo goes
+  without hearing from it for the quiet limit and asks.
+- **Whether the bridge asks as well depends on two values.** It hears a
+  reading every `SENSOR_READ_INTERVAL_MS`. If that is shorter than the quiet
+  limit, the bridge never goes quiet for long enough to ask. If it is longer,
+  the bridge asks between readings: each request is answered at once, so the
+  connection is not lost by it, and the cost is extra lines on the UART and
+  the bridge's LED flashing while it asks.
 
 | | Not connected | Connected | Connected, but quiet and being asked |
 |---|---|---|---|
-| Nucleo's user LED | Toggles every 100 ms | Toggles every 500 ms | Toggles every 500 ms |
-| Bridge's LED | Blinks red | Shows Wi-Fi and broker state | Flashes green, 100 ms on / off |
+| Nucleo's user LED | Fast blink (`LED_CONNECTING_BLINK_MS`) | Slow blink (`LED_CONNECTED_BLINK_MS`) | Slow blink |
+| Bridge's LED | Blinks red | Shows Wi-Fi and broker state | Flashes green, fast |
 
 The Nucleo sends nothing but `H,request` until the connection is made.
 

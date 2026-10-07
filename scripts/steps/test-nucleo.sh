@@ -20,6 +20,7 @@ fi
 # Full paths, because the bridge's scripts are loaded from their own folder
 SCRIPT_CONFIG="$(full_path "bridge-config.sh")"
 TOPICS_HEADER="$(full_path "../firmware/include/config/topic_routes.h")"
+CONFIG_HEADER="$(full_path "../firmware/include/config/config.h")"
 export SCRIPT_CONFIG
 
 # 1. The bridge's settings and test helpers, with this project's config
@@ -33,20 +34,22 @@ source helpers/bridge-test.sh
 # shellcheck source=/dev/null
 source helpers/report.sh
 
-# 2. Where the broker is, and the topics
+# 2. Where the broker is, the topics, and the values the firmware is built with
 find_lan_address "$LAN_ADAPTER"
 READINGS_TOPIC="$(topic_from_header "$TOPICS_HEADER" TOPIC_READINGS)"
 REPLIES_TOPIC="$(topic_from_header "$TOPICS_HEADER" TOPIC_REPLIES)"
 COMMANDS_TOPIC="$(topic_from_header "$TOPICS_HEADER" TOPIC_COMMANDS)"
+READ_INTERVAL_MS="$(number_from_header "$CONFIG_HEADER" SENSOR_READ_INTERVAL_MS)"
+RATE_MAX_S="$(number_from_header "$CONFIG_HEADER" SENSOR_READ_INTERVAL_MAX_S)"
 
 # 3. Readings: the sensor, the handshake and the way up
 # shellcheck disable=SC2153  # PROJECT_NAME and BROKER_PORT come from the bridge's settings
 report_run "test: readings arrive" check_reading_arrives "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$READINGS_TOPIC" 60
 
 # 4. Commands and their replies: the way down and back up
-report_run "test: commands answered" check_commands_answered "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$COMMANDS_TOPIC" "$REPLIES_TOPIC"
+report_run "test: commands answered" check_commands_answered "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$COMMANDS_TOPIC" "$REPLIES_TOPIC" "$RATE_MAX_S"
 
 # 5. The rate command changes how often readings arrive
-report_run "test: rate changes the timing" check_rate_changes_timing "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$COMMANDS_TOPIC" "$REPLIES_TOPIC" "$READINGS_TOPIC"
+report_run "test: rate changes the timing" check_rate_changes_timing "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$COMMANDS_TOPIC" "$REPLIES_TOPIC" "$READINGS_TOPIC" "$READ_INTERVAL_MS"
 
 echo "Nucleo test passed."
