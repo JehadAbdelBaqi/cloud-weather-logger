@@ -57,12 +57,16 @@ What this project uses and how it is put together: the decisions made and still 
 
 - STM32Cube HAL for the peripherals
 - PlatformIO as the build tool, with the set-up code written by hand
-- Drivers and building blocks in `firmware/lib/`, application code in `firmware/src/app/`, the application's headers in `firmware/include/`
+- Drivers and building blocks in `firmware/lib/`, application code in `firmware/src/app/`
+- The project's values in `firmware/include/config/`, the application's headers in `firmware/include/app/`
 - One folder per library; a file's name says whether it operates a device, does one job with no hardware, or sits on a driver
 - Number-to-text conversion in one library, `format`
-- Every pin assignment in `board.h`; the libraries are given their pins when they are set up
+- Every pin assignment in `board_config.h`; the libraries are given their pins when they are set up
 - Tunable values in `config.h`
 - The protocol's line types and fixed words in `protocol.h`
+- The MQTT topics in `topic_routes.h`
+- A value is defined once; the bridge is handed its settings in `bridge_config.h`, filled from the project's own definitions
+- One set of link settings and handshake timings for both boards
 - The code for lines to and from the bridge in `src/app/messaging/`: one handler for each line type, built from shared functions
 - Building a line and finding its fields in one hardware-free file, tested on the PC
 - The internal 16 MHz oscillator as the system clock

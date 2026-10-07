@@ -104,8 +104,28 @@ H,ack          the side that received H,request: "I am here"
 - **Never published.** The bridge handles `H` lines itself; the letter `H` is
   reserved and has no topic.
 
-The timings are set per side: the Nucleo's in `firmware/include/config.h`, the
-bridge's in `firmware/bridge/bridge-config.h`.
+### Timings
+
+Three values time the handshake. They are set once, in
+`firmware/include/config/config.h`, and **both boards are built with them**:
+the bridge is handed the same file. Changing one changes it on the Nucleo and
+on the bridge, and takes a rebuild and upload of both.
+
+| Setting | Value | What it does | Raising it | Lowering it |
+|---------|-------|--------------|------------|-------------|
+| `HANDSHAKE_REQUEST_INTERVAL_MS` | 2000 | How often `H,request` is repeated while it goes unanswered | A board that has just started, or come back, takes longer to be found | Found sooner; more lines on the UART while the other board is away |
+| `HANDSHAKE_QUIET_LIMIT_MS` | 3000 | Once connected: how long with no line from the other board before it is asked | Fewer requests on a quiet link; a lost board is noticed later | A lost board is noticed sooner; a board with nothing to send is asked more often |
+| `HANDSHAKE_MISSED_LIMIT` | 5 | Unanswered requests in a row before the connection counts as lost | Rides out a longer gap without calling it lost; a real loss is noticed later | A loss is noticed sooner; a short gap, such as a board being restarted, may count as a loss |
+
+- **Time to notice a lost board**, counted from its last line: the quiet limit,
+  plus the missed limit times the request interval. With the values above that
+  is 3 s + 5 × 2 s = 13 s.
+- **The Nucleo asks about every 3 s while all is well.** The bridge sends
+  nothing down unless it has a line to pass on, so the Nucleo goes without
+  hearing from it for the quiet limit and asks. The bridge rarely asks, because
+  a reading reaches it every 2 s.
+- **Keep the quiet limit above the reading interval** (`SENSOR_READ_INTERVAL_MS`,
+  2000). Below it, the bridge would ask between every two readings.
 
 | | Not connected | Connected | Connected, but quiet and being asked |
 |---|---|---|---|
@@ -118,14 +138,16 @@ The Nucleo sends nothing but `H,request` until the connection is made.
 
 | Setting | Value |
 |---------|-------|
-| Baud rate | 115200 |
+| Baud rate | 115200 (`LINK_BAUD` in `firmware/include/config/board_config.h`) |
+| Longest line | 127 characters, not counting the terminator (`LINK_LINE_LIMIT`, same file) |
 | Frame | 8 data bits, no parity, 1 stop bit (8N1) |
 | Line terminator | `\n` sent; `\n` or `\r\n` accepted |
 
 ## MQTT
 
 The bridge routes each line by its first letter. The MQTT payload is the protocol
-line as-is, without the terminator.
+line as-is, without the terminator. The topics are defined in
+`firmware/include/config/topic_routes.h`.
 
 | Line | Direction | Topic |
 |------|-----------|-------|

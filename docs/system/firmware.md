@@ -22,7 +22,8 @@ firmware/
   src/main.c     set-up, then the main loop
   src/app/       the application: what this program does with the libraries
   src/app/messaging/   the lines to and from the bridge
-  include/       the application's headers, board.h (pins) and config.h (tunable values)
+  include/config/      the project's values: no code behind them
+  include/app/         the headers of the files in src/app/, folder for folder
   lib/           the libraries, one folder per module
 ```
 
@@ -31,6 +32,41 @@ firmware/
   is set up.
 - **The application uses the libraries.** It decides when a reading is taken,
   what is sent and what the LED shows.
+
+### Config
+
+`include/config/` holds the project's values. Each file is `#define`s only and
+includes no code, so the bridge's build can read them as well as the Nucleo's.
+
+| File | Holds |
+|------|-------|
+| `board_config.h` | How the board is wired: every pin assignment, and the baud rate and line limit of the link to the bridge |
+| `config.h` | Tunable timings: the handshake's three values, the LED's blink times, how often the sensor is read |
+| `protocol.h` | The letter of each line type, the field separator and the fixed words |
+| `topic_routes.h` | The MQTT topic for each line type that goes through the broker |
+| `bridge_config.h` | What is handed to the bridge's build |
+
+- **A value is defined once.** A file that needs one defined elsewhere takes it
+  from there.
+- **`bridge_config.h` defines almost nothing itself.** It gives the bridge the
+  names the bridge looks for, each filled from the project's own definition:
+
+| The bridge's setting | Comes from |
+|----------------------|------------|
+| `UART_BAUD`, `LINE_MAX_LEN` | `LINK_BAUD` and `LINK_LINE_LIMIT` in `board_config.h` |
+| `UPLINK_ROUTES` | The letters in `protocol.h`, paired with the topics in `topic_routes.h` |
+| `DOWNLINK_TOPICS` | The topics in `topic_routes.h` |
+| The three handshake timings | `config.h`, under the same names the bridge reads |
+| `LOG_LINES` | Set in `bridge_config.h`; it is the bridge's own |
+
+- **Both boards are built with the same link settings and handshake timings**,
+  so the two ends cannot drift apart. What each handshake timing does, and
+  what changing it means, is in [protocol.md](protocol.md#h--handshake).
+- **The `link` library keeps a line limit of its own**, because a library does
+  not read the project's files. The build stops if it differs from
+  `LINK_LINE_LIMIT`.
+- **`board.h` is not one of these.** It declares the two set-up functions in
+  `board.c`, and is in `include/app/` with the other headers.
 
 ### Messaging
 
@@ -48,8 +84,8 @@ functions.
 | `bridge_connection.c` | Whether the connection to the bridge is made | Yes |
 
 The letters of the line types and the fixed words are defined once, in
-`include/protocol.h`. The bridge's routing table
-(`firmware/bridge/bridge-config.h`) takes its letters from the same file.
+`include/config/protocol.h`, and the bridge's routing table is built from the
+same letters (see [Config](#config)).
 
 ### Libraries
 
