@@ -26,7 +26,6 @@ What this project uses and how it is put together: the decisions made and still 
 - Nucleo-F411RE as the microcontroller board
 - BME280 over I2C for temperature, pressure and humidity
 - Genesis Mini (ESP32-S3) as the Wi-Fi bridge
-- 3.5" ILI9488 screen over SPI for readings and device status
 - The on-board user LED for link status
 - The on-board RTC and its 32.768 kHz crystal for the time of each reading
 

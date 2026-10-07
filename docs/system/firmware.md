@@ -12,7 +12,6 @@ PlatformIO (`framework = stm32cube`).
 | USART1 (PA9 TX / PA10 RX) | Wi-Fi bridge | Protocol lines |
 | USART2 (via ST-LINK USB) | PC serial monitor | Debug output only |
 | I2C | BME280 | Temperature / pressure / humidity |
-| SPI | 3.5" ILI9488 screen | On-device display |
 | RTC on the LSE crystal | — | Timestamps |
 
 ## Code layout
@@ -177,18 +176,6 @@ kept across a restart.
 - The bridge sends the real time down the UART (`T` line) on connect and hourly.
 - No readings are taken after a power-up until the first `T` has set the clock.
 - Readings resent from memory carry their original sample time.
-
-## Screen
-
-A 3.5" ILI9488 on the SPI bus, with its own chip select, DC and reset lines.
-Touch is not used.
-
-| Shows |
-|-------|
-| Latest temperature / pressure / humidity |
-| RTC time |
-| Link status |
-| Backlog (readings held, not yet acked) |
 
 ## Commands
 
