@@ -3,8 +3,10 @@
 #include <stddef.h>
 
 #include "debug.h"
-#include "handshake.h"
 #include "link.h"
+#include "message_handlers.h"
+#include "polling.h"
+#include "protocol.h"
 
 void router_poll(void)
 {
@@ -13,10 +15,12 @@ void router_poll(void)
         return;
     }
 
-    if (handshake_handle_line(line)) {
+    if (line[0] == PROTOCOL_LETTER_HANDSHAKE) {
+        handle_handshake(line);
         return;
     }
 
+    polling_note_heard();
     debug_print("down: ");
     debug_print(line);
     debug_print("\r\n");

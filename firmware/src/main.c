@@ -2,7 +2,8 @@
 
 #include "board.h"
 #include "debug.h"
-#include "handshake.h"
+#include "polling.h"
+#include "protocol.h"
 #include "router.h"
 #include "sensor.h"
 #include "status.h"
@@ -28,11 +29,10 @@ int main(void)
 
     debug_print("weather logger started\r\n");
     sensor_init();
-    handshake_init();
 
     while (1) {
         router_poll();
-        handshake_poll();
+        polling_send_when_due(PROTOCOL_LETTER_HANDSHAKE, PROTOCOL_HANDSHAKE_REQUEST);
         status_poll();
         sensor_poll();
     }

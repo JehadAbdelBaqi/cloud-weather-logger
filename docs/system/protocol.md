@@ -89,8 +89,13 @@ H,ack          the side that received H,request: "I am here"
 
 - **Either side starts.** Each board sends `H,request` when it starts, so a
   restart of either one is covered.
-- **Made** once a side has received `H,ack`, or has received `H,request` and
-  answered it.
+- **Made, on the Nucleo, only by an `H,ack`** from the bridge: the answer to the
+  Nucleo's own request, which shows that lines get through in both directions.
+- **A request from the bridge** is answered with `H,ack`, and the Nucleo sends
+  its own `H,request` straight after it, without waiting for its timer, so the
+  connection is made again at once when the bridge restarts.
+- **Made, on the bridge,** once it has received `H,ack`, or has received
+  `H,request` and answered it.
 - **Not connected:** `H,request` is repeated every 2 s, for as long as it takes.
 - **Connected:** nothing is sent while lines keep arriving from the other side;
   any line shows it is still there. After 3 s with none, `H,request` is sent

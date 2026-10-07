@@ -39,6 +39,7 @@ What this project uses and how it is put together: the decisions made and still 
 - One script, `build.sh`, builds and uploads both boards; its steps are switched in `build-config.sh`
 - The bridge repository's test broker is the broker side until this project's server stack exists
 - A handshake between the Nucleo and the bridge before the link is used, and a watch on it afterwards
+- The Nucleo counts the connection as made only when the bridge answers the Nucleo's own request
 - Polled UART receive on the Nucleo
 
 ## The protocol
@@ -61,6 +62,9 @@ What this project uses and how it is put together: the decisions made and still 
 - Number-to-text conversion in one library, `format`
 - Every pin assignment in `board.h`; the libraries are given their pins when they are set up
 - Tunable values in `config.h`
+- The protocol's line types and fixed words in `protocol.h`
+- The code for lines to and from the bridge in `src/app/messaging/`: one handler for each line type, built from shared functions
+- Building a line and finding its fields in one hardware-free file, tested on the PC
 - The internal 16 MHz oscillator as the system clock
 - The datasheet's integer formulas for the BME280 compensation
 - Readings are timestamped on the Nucleo, with a stand-in time until the RTC is set up

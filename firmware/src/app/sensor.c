@@ -12,6 +12,7 @@
 #include "board.h"
 #include "config.h"
 #include "debug.h"
+#include "message_handlers.h"
 #include "reading.h"
 #include "time_interval.h"
 
@@ -137,7 +138,7 @@ static void show_reading(const reading_t *reading)
  */
 static void send_reading(const reading_t *reading)
 {
-    if (reading_send(reading)) {
+    if (handle_reading(reading)) {
         return;
     }
     debug_print("reading not sent\r\n");

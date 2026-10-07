@@ -22,11 +22,13 @@ pio test -e native -f link/test_link_framing
 ## What is tested
 
 The libraries' files of the kind `<module>_<job>.c`: one job, no hardware
-(see [firmware.md](../../docs/system/firmware.md)). There is one test folder
-for each, under a folder named after its library.
+(see [firmware.md](../../docs/system/firmware.md)), and the application's
+files with no hardware in them. There is one test folder for each, under a
+folder named after its library, or `app/` for the application.
 
 ```
 test/
+  app/      test_line/                 building a protocol line, finding its fields, checking its word
   bme280/   test_bme280_raw/           measurement bytes to raw values
             test_bme280_calibration/   calibration bytes to calibration values
             test_bme280_compensation/  raw values to real units
@@ -41,7 +43,7 @@ test/
 |------|-----|
 | Drivers (`<module>_driver.c`) | They operate a device, so they only run on the board |
 | `link.c`, `debug.c` | They sit on a driver |
-| The application (`src/`) | It calls the HAL, the link and the debug output directly |
+| The rest of the application (`src/`) | It calls the HAL, the link and the debug output directly |
 
 ## How it works
 

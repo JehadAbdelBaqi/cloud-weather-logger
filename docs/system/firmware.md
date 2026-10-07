@@ -21,6 +21,7 @@ PlatformIO (`framework = stm32cube`).
 firmware/
   src/main.c     set-up, then the main loop
   src/app/       the application: what this program does with the libraries
+  src/app/messaging/   the lines to and from the bridge
   include/       the application's headers, board.h (pins) and config.h (tunable values)
   lib/           the libraries, one folder per module
 ```
@@ -30,6 +31,25 @@ firmware/
   is set up.
 - **The application uses the libraries.** It decides when a reading is taken,
   what is sent and what the LED shows.
+
+### Messaging
+
+Everything about the lines exchanged with the bridge is in `src/app/messaging/`.
+Each line type has one handler, and the handlers are built from small shared
+functions.
+
+| File | Job | Needs the board |
+|------|-----|-----------------|
+| `router.c` | Takes each line that arrives and hands it to the handler for its first letter | Yes |
+| `message_handlers.c` | One complete handler for each line type: the handshake, a reading | Yes |
+| `message_helpers.c` | What the handlers share that touches the hardware: sending a line of one word, the time for a reading | Yes |
+| `line.c` | Text work on a line: start it, add a field, find a field, check its word | No, it builds on a PC as it stands |
+| `polling.c` | Asks the bridge whether it is there, on a timer, and notices when it stops answering | Yes |
+| `bridge_connection.c` | Whether the connection to the bridge is made | Yes |
+
+The letters of the line types and the fixed words are defined once, in
+`include/protocol.h`. The bridge's routing table
+(`firmware/bridge/bridge-config.h`) takes its letters from the same file.
 
 ### Libraries
 
