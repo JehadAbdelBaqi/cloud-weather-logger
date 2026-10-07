@@ -3,10 +3,16 @@
 
 // The weather logger's config for the Wi-Fi bridge's firmware.
 
-// Uplink: a line's first letter picks its topic
+#include "../include/protocol.h"
+
+// The UART link to the Nucleo. The Nucleo's side has to use the same values.
+#define UART_BAUD    115200  // bits per second
+#define LINE_MAX_LEN 127     // longest line in either direction, in characters, not counting the '\n'
+
+// Uplink: a line's first letter picks its topic. The letters are the Nucleo's own, from protocol.h
 #define UPLINK_ROUTES \
-    { 'W', "weather/nucleo-01/readings" }, \
-    { 'R', "weather/nucleo-01/replies" }
+    { PROTOCOL_LETTER_READING, "weather/nucleo-01/readings" }, \
+    { PROTOCOL_LETTER_REPLY,   "weather/nucleo-01/replies" }
 
 // Downlink: messages on these topics are written to the Nucleo
 #define DOWNLINK_TOPICS \
