@@ -1,13 +1,10 @@
-#ifndef BOARD_H
-#define BOARD_H
+#ifndef BOARD_CONFIG_H
+#define BOARD_CONFIG_H
 
-#include <stdbool.h>
-
-#include "stm32f4xx_hal.h"
-
-#include "i2c_driver.h"
-
-// Pin assignments on the Nucleo-F411RE, and the set-up that hands them to the modules.
+// How the Nucleo-F411RE is wired: the pin assignments, and the settings of the link to the bridge.
+// Values only, with nothing included, so the bridge's build can read them too
+// (bridge_config.h, beside this file, takes the link's baud rate and line limit from here).
+// A file that uses the pin names includes the HAL itself.
 
 // Green user LED (LD2) - PA5, Nucleo user manual UM1724 section 7.6
 #define LED_PORT GPIOA
@@ -21,6 +18,7 @@
 #define LINK_RX_PIN  GPIO_PIN_10
 #define LINK_PIN_AF  GPIO_AF7_USART1
 #define LINK_BAUD    115200
+#define LINK_LINE_LIMIT 127  // longest line, in characters, not counting the '\n'
 
 // Debug output - USART2 TX on PA2, which the ST-LINK passes to the PC as a USB serial port
 // (UM1724 section 6.8); alternate function 7. Output only: no RX pin is set up.
@@ -38,22 +36,5 @@
 #define SENSOR_SDA_PIN       GPIO_PIN_9
 #define SENSOR_PIN_AF        GPIO_AF4_I2C1
 #define SENSOR_I2C_SPEED_HZ  100000
-
-/**
- * @brief Sets up the HAL, the system clock, the user LED, the debug output and the link to the
- *        bridge, with the pins above.
- *
- * Call once, first thing in main().
- *
- * @return true if every step worked
- */
-bool board_init(void);
-
-/**
- * @brief Gives the I2C bus the BME280 is on, for bme280_init().
- *
- * @return The bus, its pins and its speed
- */
-const i2c_config_t *board_sensor_bus(void);
 
 #endif

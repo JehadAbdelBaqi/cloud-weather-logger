@@ -1,10 +1,15 @@
 #include "board.h"
 
+#include "board_config.h"
 #include "clock_driver.h"
 #include "debug.h"
 #include "led_driver.h"
 #include "link.h"
 #include "uart_driver.h"
+
+// The link library sizes its buffer with its own limit: it has to be the one in board_config.h
+_Static_assert(LINK_LINE_MAX_LEN == LINK_LINE_LIMIT,
+               "the link library's line limit differs from LINK_LINE_LIMIT in board_config.h");
 
 static const uart_config_t debug_config = {
     .instance = DEBUG_UART,

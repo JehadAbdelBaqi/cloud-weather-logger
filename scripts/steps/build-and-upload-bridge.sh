@@ -9,4 +9,4 @@ source helpers/bridge-helpers.sh
 # The bridge's repository sits beside this one
 BRIDGE_REPO="../../uart-mqtt-bridge"
 
-build_and_upload_bridge "$BRIDGE_REPO" "bridge-config.sh" "../firmware/bridge/bridge-config.h" "build-config.sh"
+build_and_upload_bridge "$BRIDGE_REPO" "bridge-config.sh" "../firmware/include/config/bridge_config.h" "build-config.sh"
