@@ -72,7 +72,8 @@ What this project uses and how it is put together: the decisions made and still 
 - The internal 16 MHz oscillator as the system clock
 - The datasheet's integer formulas for the BME280 compensation
 - Readings are timestamped on the Nucleo, with a stand-in time until the RTC is set up
-- Readings are held in memory while there is no connection
+- Readings are put into a store in memory and sent from there, one at a time, each staying until it is acknowledged
+- The bridge acknowledges a reading once the broker has it, and reports the state of its connection upstream
 - Store-and-forward driven by acknowledgements
 - The sequence number starts again at power-on
 - Unit tests on the PC, for the code that touches no hardware, written alongside new logic
