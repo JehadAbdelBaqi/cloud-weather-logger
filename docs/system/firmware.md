@@ -141,33 +141,94 @@ lib/
 
 ## UART
 
-Polled: readings go out on a timer, and a polled line parser handles incoming
-lines (commands, acks, time). No receive interrupt or ring buffer.
+Polled: a line parser handles incoming lines (commands, acknowledgements,
+the time) on every pass of the main loop. No receive interrupt or ring buffer.
 
 Protocol lines always run on USART1, to the bridge. USART2 carries debug output
 only, so the Nucleo can be watched in a serial monitor while the link runs.
 
-## Store-and-forward
+## Readings held and sent again
+
+A reading is never sent straight from the sensor. It goes into a store in the
+Nucleo's memory, and is sent from there. It stays in the store until it is
+acknowledged.
 
 ```
- sample ─► keep in memory ─► send W line ─► ... ─► A,<seq> arrives
-                                                     │
-                       readings up to seq are acked ◄┘
-                       their memory is freed
-                       anything unacked is resent
+ reader (on a timer)                 sender (driven by the connection)
+ sensor ──► store in memory ──► oldest reading ──► bridge ──► broker
+                  ▲                                              │
+                  └────── acknowledged: removed from the store ◄─┘
 ```
 
-- Every reading is kept in the Nucleo's memory until its `seq` is acknowledged.
-- The ack is sent only after the reading is written to InfluxDB.
-- Unacked readings are resent.
-- When the memory is full, the Nucleo stops taking readings until there is
-  room again.
-- Readings held in memory are lost if the Nucleo restarts or loses power.
+Two parts, which do not depend on each other:
+
+| Part | Runs | Does |
+|------|------|------|
+| **Reader** | On a timer, whatever the state of the connection | Takes a reading, gives it its sequence number and its time, puts it in the store |
+| **Sender** | Whenever the connection is up; it has no timer of its own | Takes the oldest reading in the store, sends it, waits for its acknowledgement, then moves to the next |
+
+**The sender, step by step**
+
+1. Send the oldest reading in the store.
+2. Wait for its acknowledgement. The next reading is not sent until it comes.
+3. Acknowledged: the reading is removed from the store. Back to step 1.
+
+One reading at a time, in the order they were taken. A reading sent again
+keeps the sequence number and the time it was given when it was taken.
+
+**What stops the sender, and what starts it again**
+
+| State | How the Nucleo knows | Sender |
+|-------|----------------------|--------|
+| No connection to the bridge | Its own handshake with the bridge | Stops |
+| The bridge has no connection upstream (Wi-Fi or broker) | The bridge reports it | Stops |
+| Both are back | The handshake is made, and the bridge reports it | Carries on, from the reading it was on |
+| Connected, but no acknowledgement for the reading sent | A set time passes | Sends the same reading again |
+
+The last row covers a line, or its acknowledgement, lost on the way while both
+boards still count as connected. No change of connection state would ever
+report that, so without the retry the sender would wait for ever.
+
+Meanwhile the reader carries on: readings taken during an outage queue up in
+the store and go out, oldest first, once the sender starts again.
+
+**The store**
+
+| | |
+|---|---|
+| Where | The Nucleo's memory (RAM), about 50 KB set aside |
+| One reading | 20 bytes: sequence number, time, temperature, pressure, humidity |
+| Holds | About 2,500 readings: several hours at a reading every few seconds |
+| When full | No readings are taken until there is room again. Nothing already held is thrown away |
+| On a restart or a power cut | Everything in it is lost |
+
+**Who acknowledges**
+
+| Acknowledgement | From | Means |
+|-----------------|------|-------|
+| The bridge's own line | The bridge, once the broker confirms the line | The broker has the reading. This is what removes it from the store |
+| `A,<seq>` | The server, once the reading is written to the database | The reading is stored. Comes with the server stack |
+
+**The same reading can arrive twice.** If a reading got through and its
+acknowledgement was lost, it is sent again. Whatever takes the readings in has
+to treat one it already has as a repeat, not as a new reading.
+
+**Still to settle**
+
+| Open point | Note |
+|------------|------|
+| The letter and form of the bridge's two lines | See [protocol.md](protocol.md#acknowledgement-from-the-bridge) |
+| How long to wait before sending a reading again | One value in `config.h` |
+| The new reading interval | Slower than today's 2 s; one value in `config.h` |
+| Whether replies to commands go through the store | A reply that arrives long after its command is of little use, so probably not |
+| Telling a repeat from a new reading after a restart | `seq` starts again at every power-on, so the same number can be a different reading. The time on the reading tells them apart, once it is the real time |
 
 ## Sequence numbers
 
 `seq` counts up from the start each time the Nucleo is switched on. It is not
-kept across a restart.
+kept across a restart. While the connection is down it carries on counting:
+readings are held in the store with the numbers they were given, and nothing
+is renumbered when they are sent later.
 
 ## Time
 
@@ -175,7 +236,7 @@ kept across a restart.
   32.768 kHz LSE crystal (X2 on the MB1136 C-04 board).
 - The bridge sends the real time down the UART (`T` line) on connect and hourly.
 - No readings are taken after a power-up until the first `T` has set the clock.
-- Readings resent from memory carry their original sample time.
+- Readings sent again from the store carry their original sample time.
 
 ## Commands
 

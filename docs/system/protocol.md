@@ -11,14 +11,18 @@ The bridge routes each line by its first letter.
 |------|-----------|---------|
 | `W,<seq>,<epoch>,<t_centi_C>,<p_Pa>,<rh_centi_pct>` | up | A reading |
 | `R,<id>,<result>` | up | Reply to a command |
-| `A,<seq>` | down | Acknowledgement |
+| `A,<seq>` | down | Acknowledgement from the server: the reading is stored |
+| Acknowledgement from the bridge *(letter not yet chosen)* | down | The broker has the line |
+| Connection upstream *(letter not yet chosen)* | down | The bridge has lost, or has back, its connection to the broker |
 | `T,<epoch>` | down | Set the time |
 | `C,<id>,<command>` | down | A command |
 | `H,request` | both | Handshake: "are you there?" |
 | `H,ack` | both | Handshake: "I am here" |
 
 Up = Nucleo → server. Down = server → Nucleo. The `H` lines go no further than
-the bridge: they pass between the Nucleo and the bridge only.
+the bridge: they pass between the Nucleo and the bridge only. The bridge's
+acknowledgement and its report of the connection upstream are written by the
+bridge itself, so they have no topic either.
 
 ## `W` — reading
 
@@ -38,7 +42,49 @@ W,1042,1790812800,2140,101325,4550
 All fields are integers. Ingest converts them to decimals before writing to
 InfluxDB.
 
+## Acknowledgement from the bridge
+
+When the broker confirms a line the bridge published, the bridge writes an
+acknowledgement down to the Nucleo. It carries the **first field** of the line
+that was confirmed, which for a reading is its `seq`.
+
+```
+Nucleo ── W,42,... ──► bridge ── publish ──► broker
+                       bridge ◄── confirmed ── broker
+Nucleo ◄── ack 42 ──── bridge
+```
+
+- **It means "the broker has it"**, and nothing about what happens after the
+  broker.
+- **One acknowledgement for one line.** The Nucleo sends its next reading only
+  once it has the acknowledgement for the one before.
+- **No acknowledgement, with the connection up:** the Nucleo sends the same
+  reading again after a set time. So a reading can reach the broker twice,
+  with the same `seq` and the same time.
+- **The bridge does not read the line.** The broker confirms a message by a
+  number the bridge gave it, so the bridge remembers the first field of each
+  line it publishes and hands that back.
+
+The letter of this line, and its exact form, are not yet chosen.
+
+## Connection upstream
+
+The bridge tells the Nucleo when it loses its connection upstream, and when it
+has it back. Upstream is Wi-Fi and the broker together: what the Nucleo needs
+to know is whether a line handed to the bridge now can be published.
+
+- **Lost:** the Nucleo stops sending readings. It carries on taking them, and
+  holds them.
+- **Back:** the Nucleo carries on sending, from the reading it was on.
+
+This is separate from the handshake, which only covers the wires between the
+two boards. The letter of this line, and its exact form, are not yet chosen.
+
 ## `A` — acknowledgement
+
+Comes with the server stack. Until then the acknowledgement from the bridge,
+above, is the one the Nucleo acts on.
+
 
 `A,<seq>` means every reading **up to and including** `seq` is stored in
 InfluxDB.

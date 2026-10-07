@@ -13,6 +13,10 @@ cloud environments differ.
 
  DOWN  Nucleo ◄─UART─ bridge ◄─MQTT─ broker ◄─ ingest / any container
        acks (A), time (T), commands (C)
+
+       Nucleo ◄─UART─ bridge
+       the bridge's own lines: "the broker has it", and the state of its
+       connection upstream
 ```
 
 - **Readings travel over MQTT through a broker.** The ingest service connects
@@ -20,6 +24,9 @@ cloud environments differ.
   no inbound port for data.
 - **The bridge is two-way.** Readings go up; commands, acknowledgements and the
   time come down the same path.
+- **A reading is acknowledged in two stages.** The bridge tells the Nucleo when
+  the broker has it, which is what lets the Nucleo let go of it. The server
+  acknowledges separately once it is stored in the database.
 - **The Nucleo speaks plain text lines over UART** (see
   [protocol.md](protocol.md)). Wi-Fi, TLS and MQTT live in the bridge.
 
