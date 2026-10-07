@@ -51,16 +51,20 @@ test/
 - **Each test folder is one small program.** PlatformIO builds it with the
   PC's compiler, runs it and reads the result of each test from its output.
 - **The `native` environment in `platformio.ini` lists the files to compile.**
-  Only those files are built for the PC. Nothing else under `lib/` is, because
-  a driver includes the HAL, which only builds for the microcontroller.
+  Only those files are built for the PC. Nothing else under `lib/` or `src/`
+  is, because a driver includes the HAL, which only builds for the
+  microcontroller.
 - **A test file has the same shape every time:** `setUp()` runs before each
   test, one function per case, and `main()` lists the cases to run.
 
 ## Adding a test
 
-1. The code to test goes in a file of its own with no hardware in it,
-   `lib/<module>/<module>_<job>.c`.
+1. The code to test goes in a file of its own with no hardware in it:
+   `lib/<module>/<module>_<job>.c` for a library, or a file under `src/app/`
+   for the application.
 2. In `platformio.ini`, under `[env:native]`: add the file to
-   `build_src_filter`, and its folder to `build_flags` if it is not there yet.
-3. Add `test/<module>/test_<module>_<job>/test_<module>_<job>.c`.
+   `build_src_filter`, and the folder its header is in to `build_flags` if it
+   is not there yet.
+3. Add `test/<module>/test_<module>_<job>/test_<module>_<job>.c`, with `app`
+   as the module for an application file.
 4. Run `pio test -e native`.
