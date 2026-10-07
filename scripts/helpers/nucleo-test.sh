@@ -98,11 +98,11 @@ check_commands_answered() {
     check_command "$1" "$2" "$3" "$4" "$5" "rate 0" "err rate out of range"
 }
 
-# Stops the script unless the rate command changes how often readings arrive. The built-in 2 s
+# Stops the script unless the rate command changes how often readings arrive. The built-in 5 s
 # is put back afterwards.
 # Arguments: <project name> <address> <port> <commands topic> <replies topic> <readings topic>
 check_rate_changes_timing() {
+    check_command "$1" "$2" "$3" "$4" "$5" "rate 10" "ok"
+    check_reading_gap "$1" "$2" "$3" "$6" 9 40
     check_command "$1" "$2" "$3" "$4" "$5" "rate 5" "ok"
-    check_reading_gap "$1" "$2" "$3" "$6" 4 30
-    check_command "$1" "$2" "$3" "$4" "$5" "rate 2" "ok"
 }

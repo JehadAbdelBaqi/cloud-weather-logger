@@ -125,7 +125,7 @@ A reading taken by `read` is stored, acked and graphed like any other. The
 timed readings carry on at their own times.
 
 ```
-C,7,rate 10      →   R,7,ok          a reading every 10 s from now on
+C,7,rate 10      →   R,7,ok          a reading every 10 s from now on, in place of every 5 s
 C,8,read         →   W,...  then  R,8,ok
 C,9,reboot       →   R,9,err unknown command
 ```
@@ -142,7 +142,7 @@ When a command cannot be carried out:
 | No reply | The line has no ID, or one longer than 16 characters: there is nothing to answer with |
 
 - **The interval set by `rate` lasts until the Nucleo restarts**, when it goes
-  back to the 2 s it is built with.
+  back to the 5 s it is built with.
 - **A reply is only sent while the connection to the bridge is made**, like a
   reading.
 
@@ -192,10 +192,14 @@ on the bridge, and takes a rebuild and upload of both.
   is 3 s + 5 × 2 s = 13 s.
 - **The Nucleo asks about every 3 s while all is well.** The bridge sends
   nothing down unless it has a line to pass on, so the Nucleo goes without
-  hearing from it for the quiet limit and asks. The bridge rarely asks, because
-  a reading reaches it every 2 s.
-- **Keep the quiet limit above the reading interval** (`SENSOR_READ_INTERVAL_MS`,
-  2000). Below it, the bridge would ask between every two readings.
+  hearing from it for the quiet limit and asks.
+- **The bridge asks between readings too, as the values stand.** A reading
+  reaches it every 5 s (`SENSOR_READ_INTERVAL_MS`), which is longer than the
+  quiet limit of 3 s, so it goes quiet for long enough to ask. Each request is
+  answered at once, so the connection is not lost by it: the cost is extra
+  lines on the UART, and the bridge's LED flashing while it asks.
+- **A quiet limit above the reading interval stops the bridge asking** while
+  readings arrive on time.
 
 | | Not connected | Connected | Connected, but quiet and being asked |
 |---|---|---|---|

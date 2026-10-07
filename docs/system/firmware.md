@@ -198,7 +198,7 @@ the store and go out, oldest first, once the sender starts again.
 |---|---|
 | Where | The Nucleo's memory (RAM), about 50 KB set aside |
 | One reading | 20 bytes: sequence number, time, temperature, pressure, humidity |
-| Holds | About 2,500 readings: several hours at a reading every few seconds |
+| Holds | About 2,500 readings: about three and a half hours at a reading every 5 s |
 | When full | No readings are taken until there is room again. Nothing already held is thrown away |
 | On a restart or a power cut | Everything in it is lost |
 
@@ -219,7 +219,6 @@ to treat one it already has as a repeat, not as a new reading.
 |------------|------|
 | The letter and form of the bridge's two lines | See [protocol.md](protocol.md#acknowledgement-from-the-bridge) |
 | How long to wait before sending a reading again | One value in `config.h` |
-| The new reading interval | Slower than today's 2 s; one value in `config.h` |
 | Whether replies to commands go through the store | A reply that arrives long after its command is of little use, so probably not |
 | Telling a repeat from a new reading after a restart | `seq` starts again at every power-on, so the same number can be a different reading. The time on the reading tells them apart, once it is the real time |
 
@@ -280,9 +279,9 @@ send_reply        R,<id>,<result>
   | A reading arrives on the readings topic within 60 s | The sensor is read, the handshake with the bridge is made, and a line gets all the way up |
   | `help`, `read` and an unknown command each get the reply expected | A command gets down to the Nucleo and its reply gets back up, with the same ID |
   | `rate` with no value, and `rate 0`, are refused with their own replies | The checks on a command's value |
-  | After `rate 5`, two readings in a row are at least 4 s apart | The command really changes how often readings are taken |
+  | After `rate 10`, two readings in a row are at least 9 s apart | The command really changes how often readings are taken |
 
-  It ends by setting the rate back to 2 s. Each of the three groups of checks
+  It ends by setting the rate back to 5 s. Each of the three groups of checks
   is a line in the report that `build.sh` prints when it ends: one line for
   each step that ran, on both boards, with `success`, `FAILED` or `not run`. The topics are read from
   `firmware/include/config/topic_routes.h`, and the checks themselves are the

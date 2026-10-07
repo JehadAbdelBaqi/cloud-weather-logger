@@ -13,7 +13,7 @@
 #define LED_CONNECTED_BLINK_MS  500
 
 // How often the sensor is read, until a "rate" command changes it
-#define SENSOR_READ_INTERVAL_MS 2000
+#define SENSOR_READ_INTERVAL_MS 5000
 
 // The shortest and longest interval a "rate" command may set, in seconds
 #define SENSOR_READ_INTERVAL_MIN_S 1
