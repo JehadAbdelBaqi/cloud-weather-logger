@@ -108,8 +108,9 @@ The headers of these two folders are in `include/app/messaging/` and
 **What lasts from pass to pass** is one struct, `app_state_t` in
 `include/app/operations/app_state.h`: the state, the awaiting flag, two
 times, and the sensor's own two (when it was last read and how often it is
-read, a struct of their own from `sensor_timer.h`). It is declared once, in `main.c`, and handed to every function that
-needs it, through the route tables too. No file in `operations/` keeps any of
+read, a struct of their own from `sensor_timer.h`). It is declared once, in
+`main.c`, and handed to every function that needs it, through the route
+tables too. No file in `operations/` keeps any of
 it for itself.
 
 **One pass of the main loop** is one function, `run_pass()`, which `main`
@@ -298,6 +299,12 @@ the store and go out, oldest first, once the sender starts again.
 | Holds | About 2,500 readings. How long that covers is 2,500 times the reading interval |
 | When full | No readings are taken until there is room again. Nothing already held is thrown away |
 | On a restart or a power cut | Everything in it is lost |
+
+Replies to commands have a store of their own, kept the same way: oldest out
+first, each staying until the bridge answers `ok` for it. It is small, a
+handful of replies, each the ID of its command and the result as text; how
+many it holds is set in `config.h`. Both stores are in `src/app/stores/`, and
+both keep their places with the `ring` library.
 
 **Who acknowledges**
 

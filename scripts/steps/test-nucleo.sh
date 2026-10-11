@@ -66,6 +66,6 @@ report_run "test: reading interval and order" check_reading_interval "$PROJECT_N
 # 7. Readings are kept while the broker is stopped, and arrive in order once it is back.
 # This stops the broker in the VM for a while, and starts it again
 # shellcheck disable=SC2153  # MULTIPASS and VM_NAME come from the bridge's settings
-report_run "test: readings kept while broker stopped" check_readings_kept_while_broker_stopped "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$READINGS_TOPIC" "$READ_INTERVAL_MS" "$MULTIPASS" "$VM_NAME"
+report_run "test: kept while broker stopped" check_readings_kept_while_broker_stopped "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$READINGS_TOPIC" "$READ_INTERVAL_MS" "$MULTIPASS" "$VM_NAME"
 
 echo "Nucleo test passed."

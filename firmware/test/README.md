@@ -31,9 +31,10 @@ folder named after its library, or `app/` for the application.
 
 ```
 test/
-  app/      test_message/              the handshake message, a stored reading as the reading message
-            test_incoming/             reading a response, setting the state from a status, removing
-                                       an answered reading
+  app/      test_message/              the handshake message, the reply message, a stored reading as
+                                       the reading message, a reading's values as text
+            test_incoming/             reading a response or a command, setting the state from a
+                                       status, removing an answered reading or reply
             test_reading_store/        holding readings until they are removed: oldest first,
                                        sequence numbers, a full store
             test_reply_store/          holding replies until they are removed: oldest first, by ID,
