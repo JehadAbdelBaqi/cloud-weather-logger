@@ -1,7 +1,7 @@
-# The checks of the connection between the Nucleo and the bridge, made by silencing the Nucleo
-# through its debugger and reading what the bridge logs.
-# They use check_line_arrives from the bridge's helpers/bridge-test.sh, and number_from_header
-# from helpers/nucleo-test.sh.
+# The checks of the connection between the Nucleo and the bridge, made from the PC with no wire
+# touched: by silencing the Nucleo through its debugger, and by restarting the bridge over USB.
+# They use check_line_arrives from the bridge's helpers/bridge-test.sh, and collect_readings and
+# seqs_go_up_by_one from helpers/nucleo-test.sh.
 
 # Prints the serial port of a board, from the names under /dev/serial/by-id, which stay the same
 # whichever order the boards were plugged in.
@@ -95,4 +95,66 @@ check_bridge_loses_and_regains_nucleo() {
     grep "connection to the MCU" "$log"
     rm -f "$log"
     echo "The bridge counts a silent Nucleo as gone, and takes it back when it returns."
+}
+
+# Restarts the bridge over its USB port, with the tool that uploads to it. Nothing is uploaded:
+# the tool is asked only to identify the chip, and restarts it when it is done.
+# Arguments: <python> <esptool.py> <the bridge's serial port>
+restart_bridge() {
+    local python="$1"
+    local esptool="$2"
+    local bridge_port="$3"
+
+    "$python" "$esptool" --chip esp32s3 --port "$bridge_port" --before default_reset --after hard_reset chip_id > /dev/null 2>&1
+}
+
+# Stops the script unless the Nucleo keeps its readings while the bridge is gone, and sends them
+# when it is back: readings are collected from before the bridge is restarted until after it has
+# rejoined Wi-Fi and the broker, and their sequence numbers have to go up by one, with none
+# missing and none twice. While the bridge restarts nothing answers the Nucleo at all, which is
+# the one case where its wait for an answer runs out.
+# Arguments: <project name> <address> <port> <readings topic> <python> <esptool.py>
+#            <the bridge's serial port> <interval the firmware is built with, in milliseconds>
+check_nucleo_keeps_readings_while_bridge_restarts() {
+    local python="$5"
+    local esptool="$6"
+    local bridge_port="$7"
+    local interval_s=$(($8 / 1000))
+    local count=4
+    local timeout=$((interval_s * count + 45))
+    local readings
+    readings=$(mktemp)
+
+    # 1. Listen from before the restart, so no reading on either side of it is missed
+    echo "Collecting $count readings in a row on $4, across a restart of the bridge..."
+    collect_readings "$1" "$2" "$3" "$4" "$count" "$timeout" > "$readings" &
+    sleep "$interval_s"
+
+    # 2. Restart the bridge
+    echo "Restarting the bridge..."
+    if ! restart_bridge "$python" "$esptool" "$bridge_port"; then
+        wait || true
+        rm -f "$readings"
+        echo "The bridge could not be restarted over USB." >&2
+        exit 1
+    fi
+
+    # 3. Wait for the readings: the ones taken while the bridge was away arrive once it is back
+    if ! wait; then
+        echo "$count readings did not arrive within $timeout s. What did arrive:" >&2
+        cat "$readings" >&2
+        rm -f "$readings"
+        exit 1
+    fi
+    cat "$readings"
+
+    # 4. They carry on from one to the next, with none twice and none missing
+    if ! seqs_go_up_by_one "any" "$(cat "$readings")"; then
+        rm -f "$readings"
+        echo "A reading taken while the bridge restarted was lost or sent twice." >&2
+        exit 1
+    fi
+
+    rm -f "$readings"
+    echo "Readings are kept while the bridge restarts, and arrive in order afterwards."
 }

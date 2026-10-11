@@ -396,6 +396,7 @@ C,<id>,<number>,<value> arrives
   | Check | Proves |
   |-------|--------|
   | The Nucleo is halted through its debugger for longer than the bridge's limit, then restarted. The bridge's log has to say the connection was lost and then made, and a reading has to arrive afterwards | The bridge counts a silent Nucleo as gone, and takes it back when its handshake is answered |
+  | The bridge is restarted over USB while readings are collected from before the restart until after it; their sequence numbers have to go up by one | With nothing answering it at all, the Nucleo holds its readings and sends them in order once the bridge is back, none lost and none twice |
 
   The bridge's limit is worked out from `config.h`, as `bridge_config.h` works
   it out. The bridge's log is read from its USB serial port, found by its name
