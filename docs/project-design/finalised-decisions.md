@@ -64,7 +64,7 @@ What this project uses and how it is put together: the decisions made and still 
 - Drivers and building blocks in `firmware/lib/`, application code in `firmware/src/app/`
 - The project's values in `firmware/include/config/`, the application's headers in `firmware/include/app/`
 - One folder per library; a file's name says whether it operates a device, does one job with no hardware, or sits on a driver
-- Number-to-text conversion in one library, `format`
+- Number-to-text and text-to-number conversion in one library, `format`
 - Every pin assignment in `board_config.h`; the libraries are given their pins when they are set up
 - Tunable values in `config.h`
 - The protocol's line types and fixed words in `protocol.h`
@@ -72,13 +72,12 @@ What this project uses and how it is put together: the decisions made and still 
 - The MQTT topics in `topic_routes.h`
 - A value is defined once; the bridge is handed its settings in `bridge_config.h`, filled from the project's own definitions
 - One set of link settings and handshake timings for both boards
-- The main loop as a state machine, with one function for each state
+- One function is one pass of the main loop: the jobs done in every state, then the function of the state the Nucleo is in
 - The sensor code in `src/app/sensor/`: it only measures, and hands each reading back to its caller
-- The code for lines to and from the bridge in `src/app/messaging/`, built from shared functions
-- An incoming line routed by its first letter, and a response then by its second, with every mapping in one file
-- The status of a response picks what is done and the state the Nucleo moves to
-- The state machine in `src/app/state_machine/`: the states, the functions they are built from, and the current state, each in a file of its own
-- Building a line and finding its fields in one hardware-free file, tested on the PC
+- Building messages in `src/app/messaging/`; deciding what is sent, and handling what arrives, in `src/app/operations/`
+- An incoming message routed by its first letter, and a response then by its second, through tables in one file
+- The status of a response sets the state the Nucleo is in
+- A message built by one function from a description of its type, with every field already text
 - The internal 16 MHz oscillator as the system clock
 - The datasheet's integer formulas for the BME280 compensation
 - Readings are timestamped on the Nucleo, with a stand-in time until the RTC is set up
@@ -87,6 +86,7 @@ What this project uses and how it is put together: the decisions made and still 
 - The bridge answers every line: an acknowledgement once the broker has it, or a report that it has not gone through
 - The bridge reports the state of its connection upstream
 - A line the bridge does not answer in time sends the Nucleo back to the handshake
+- One quiet limit for the link: it decides when an answer is given up on and when a quiet link is checked
 - Store-and-forward driven by acknowledgements
 - The sequence number starts again at power-on
 - Unit tests on the PC, for the code that touches no hardware, written alongside new logic
