@@ -1,7 +1,7 @@
 #ifndef MESSAGES_H
 #define MESSAGES_H
 
-#include "message.h"
+#include "message_build.h"
 
 // The message types: one message_t for each kind of line the Nucleo sends
 

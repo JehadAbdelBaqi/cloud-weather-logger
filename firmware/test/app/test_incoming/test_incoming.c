@@ -38,75 +38,6 @@ void tearDown(void)
 {
 }
 
-/** Field 0 is the first one after the letter. */
-static void test_field_first(void)
-{
-    char field[8];
-
-    TEST_ASSERT_TRUE(get_field("L,W,12,ok", 0, field, sizeof(field)));
-    TEST_ASSERT_EQUAL_STRING("W", field);
-}
-
-/** A field in the middle stops at the next separator. */
-static void test_field_middle(void)
-{
-    char field[8];
-
-    TEST_ASSERT_TRUE(get_field("L,W,12,ok", 1, field, sizeof(field)));
-    TEST_ASSERT_EQUAL_STRING("12", field);
-}
-
-/** The last field runs to the end of the message. */
-static void test_field_last(void)
-{
-    char field[8];
-
-    TEST_ASSERT_TRUE(get_field("L,W,12,ok", 2, field, sizeof(field)));
-    TEST_ASSERT_EQUAL_STRING("ok", field);
-}
-
-/** An empty field is a field: it is copied as empty text. */
-static void test_field_empty(void)
-{
-    char field[8] = "old";
-
-    TEST_ASSERT_TRUE(get_field("L,W,,ok", 1, field, sizeof(field)));
-    TEST_ASSERT_EQUAL_STRING("", field);
-}
-
-/** A field past the end of the message is not there. */
-static void test_field_past_the_end(void)
-{
-    char field[8];
-
-    TEST_ASSERT_FALSE(get_field("L,W,12,ok", 3, field, sizeof(field)));
-}
-
-/** A message that is its letter alone has no fields. */
-static void test_field_of_a_letter_alone(void)
-{
-    char field[8];
-
-    TEST_ASSERT_FALSE(get_field("L", 0, field, sizeof(field)));
-}
-
-/** A field that fills the buffer, with its ending '\0', is copied. */
-static void test_field_that_fills_the_buffer(void)
-{
-    char field[4];
-
-    TEST_ASSERT_TRUE(get_field("L,abc,ok", 0, field, sizeof(field)));
-    TEST_ASSERT_EQUAL_STRING("abc", field);
-}
-
-/** A field one character too long for the buffer is not copied. */
-static void test_field_too_long_for_the_buffer(void)
-{
-    char field[4];
-
-    TEST_ASSERT_FALSE(get_field("L,abcd,ok", 0, field, sizeof(field)));
-}
-
 /** A whole response is read into its three fields. */
 static void test_response_is_read_into_its_fields(void)
 {
@@ -198,15 +129,6 @@ static void test_reading_stays_when_the_seq_is_not_a_number(void)
 int main(void)
 {
     UNITY_BEGIN();
-
-    RUN_TEST(test_field_first);
-    RUN_TEST(test_field_middle);
-    RUN_TEST(test_field_last);
-    RUN_TEST(test_field_empty);
-    RUN_TEST(test_field_past_the_end);
-    RUN_TEST(test_field_of_a_letter_alone);
-    RUN_TEST(test_field_that_fills_the_buffer);
-    RUN_TEST(test_field_too_long_for_the_buffer);
 
     RUN_TEST(test_response_is_read_into_its_fields);
     RUN_TEST(test_response_clears_the_awaiting_flag);

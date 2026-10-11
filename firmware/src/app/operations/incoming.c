@@ -7,6 +7,7 @@
 
 #include "format_number.h"
 #include "link_framing.h"
+#include "message_fields.h"
 #include "protocol.h"
 #include "reading_store.h"
 
@@ -40,13 +41,13 @@ bool read_response(const char *text, bool *awaiting_ack, response_t *response)
 {
     *awaiting_ack = false;
 
-    if (!get_field(text, 0, response->letter, sizeof(response->letter))) {
+    if (!get_field(text, PROTOCOL_FIELD_SEPARATOR, 0, response->letter, sizeof(response->letter))) {
         return false;
     }
-    if (!get_field(text, 1, response->first_field, sizeof(response->first_field))) {
+    if (!get_field(text, PROTOCOL_FIELD_SEPARATOR, 1, response->first_field, sizeof(response->first_field))) {
         return false;
     }
-    if (!get_field(text, 2, response->status, sizeof(response->status))) {
+    if (!get_field(text, PROTOCOL_FIELD_SEPARATOR, 2, response->status, sizeof(response->status))) {
         return false;
     }
     return true;
@@ -72,38 +73,4 @@ void remove_reading_if_ok(const char *seq_text, state_key_t current_state)
         return;
     }
     reading_store_remove(seq);
-}
-
-/**
- * @brief Gets one field out of a message, as text of its own.
- *
- * @param text  The message, e.g. L,W,12,ok
- * @param index Which field: 0 is the first one after the letter
- * @param field Filled in with the field, ending in '\0'
- * @param size  The size of the field buffer
- * @return true if the field was copied; false if the message has no such field or it does not fit
- */
-bool get_field(const char *text, size_t index, char *field, size_t size)
-{
-    const char separator[] = { PROTOCOL_FIELD_SEPARATOR, '\0' };
-    const char *start = text;
-
-    // Step past the letter and each field before the one wanted: one separator each
-    for (size_t i = 0; i <= index; i++) {
-        start = strchr(start, PROTOCOL_FIELD_SEPARATOR);
-        if (start == NULL) {
-            return false;
-        }
-        start++;
-    }
-
-    // The field runs up to the next separator, or to the end of the message
-    size_t length = strcspn(start, separator);
-
-    if (length >= size) {
-        return false;
-    }
-    memcpy(field, start, length);
-    field[length] = '\0';
-    return true;
 }

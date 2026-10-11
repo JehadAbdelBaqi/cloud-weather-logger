@@ -5,7 +5,8 @@
 
 #include "link.h"
 
-#include "message.h"
+#include "message_build.h"
+#include "protocol.h"
 
 /**
  * @brief Sends a message going out: constructs it and sends it.
@@ -25,7 +26,7 @@ void send_outgoing_message(message_t message, bool *awaiting_ack, uint32_t now_m
     }
     char text[LINK_LINE_MAX_LEN + 1];
 
-    construct_message(text, message);
+    construct_message(text, PROTOCOL_FIELD_SEPARATOR, message);
     link_send_line(text);
     *awaiting_ack = true;
     *sent_ms = now_ms;

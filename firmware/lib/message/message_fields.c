@@ -1,4 +1,6 @@
-#include "message_helpers.h"
+#include "message_fields.h"
+
+#include <string.h>
 
 /**
  * @brief Fills in a message's fields with the values given, in order.
@@ -51,4 +53,39 @@ void fill_message_fields_from_numbers(message_t *message, const int32_t numbers[
         values[i] = texts[i];
     }
     fill_message(message, values);
+}
+
+/**
+ * @brief Gets one field out of a message, as text of its own.
+ *
+ * @param text      The message, e.g. L,W,12,ok
+ * @param separator The character that goes before each field
+ * @param index     Which field: 0 is the first one after the letter
+ * @param field     Filled in with the field, ending in '\0'
+ * @param size      The size of the field buffer
+ * @return true if the field was copied; false if the message has no such field or it does not fit
+ */
+bool get_field(const char *text, char separator, size_t index, char *field, size_t size)
+{
+    const char separators[] = { separator, '\0' };
+    const char *start = text;
+
+    // Step past the letter and each field before the one wanted: one separator each
+    for (size_t i = 0; i <= index; i++) {
+        start = strchr(start, separator);
+        if (start == NULL) {
+            return false;
+        }
+        start++;
+    }
+
+    // The field runs up to the next separator, or to the end of the message
+    size_t length = strcspn(start, separators);
+
+    if (length >= size) {
+        return false;
+    }
+    memcpy(field, start, length);
+    field[length] = '\0';
+    return true;
 }

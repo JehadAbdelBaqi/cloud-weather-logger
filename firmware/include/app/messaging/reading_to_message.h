@@ -2,7 +2,7 @@
 #define READING_TO_MESSAGE_H
 
 #include "format_number.h"
-#include "message.h"
+#include "message_build.h"
 #include "reading_store.h"
 
 // A stored reading as a message: the one place that knows both what a reading is and what a

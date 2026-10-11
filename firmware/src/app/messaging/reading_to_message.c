@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#include "message_helpers.h"
+#include "message_fields.h"
 #include "protocol.h"
 
 /**

@@ -1,5 +1,5 @@
-#ifndef MESSAGE_H
-#define MESSAGE_H
+#ifndef MESSAGE_BUILD_H
+#define MESSAGE_BUILD_H
 
 #include <stddef.h>
 
@@ -18,9 +18,9 @@ typedef struct {
     fields_t fields;
 } message_t;
 
-// Described in message.c
+// Described in message_build.c
 void message_start(char *text, char letter);
-void message_add_field(char *text, const char *field);
-char *construct_message(char *text, message_t message);
+void message_add_field(char *text, char separator, const char *field);
+char *construct_message(char *text, char separator, message_t message);
 
 #endif

@@ -31,10 +31,9 @@ folder named after its library, or `app/` for the application.
 
 ```
 test/
-  app/      test_message/              constructing a message from its letter and fields, filling
-                                       its fields in, a stored reading as the reading message
-            test_incoming/             getting a field out of a message, reading a response, setting
-                                       the state from a status, removing an answered reading
+  app/      test_message/              the handshake message, a stored reading as the reading message
+            test_incoming/             reading a response, setting the state from a status, removing
+                                       an answered reading
             test_reading_store/        holding readings until they are removed: oldest first,
                                        sequence numbers, a full store
   bme280/   test_bme280_raw/           measurement bytes to raw values
@@ -44,6 +43,8 @@ test/
                                        a number
   link/     test_link_framing/         received bytes to a line
             test_link_buffer/          holding received bytes until they are read
+  message/  test_message_build/        constructing a message from its letter and fields
+            test_message_fields/       filling a message's fields in, getting a field out of a message
   time/     test_time_interval/        whether an interval has passed
 ```
 

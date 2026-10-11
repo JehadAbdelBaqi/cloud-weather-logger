@@ -20,7 +20,7 @@ PlatformIO (`framework = stm32cube`).
 firmware/
   src/main.c     set-up, then the main loop
   src/app/       the application: what this program does with the libraries
-  src/app/messaging/   building a message
+  src/app/messaging/   this project's messages
   src/app/operations/  what is sent and when, and what is done with what arrives
   include/config/      the project's values: no code behind them
   include/app/         the headers of the files in src/app/
@@ -71,14 +71,14 @@ includes no code, so the bridge's build can read them as well as the Nucleo's.
 
 ### Messaging
 
-`src/app/messaging/` builds messages and does nothing else. It has no hardware
-and no timing in it, so all of it builds and is tested on the PC.
+`src/app/messaging/` holds this project's messages. Building a message, and
+getting a field out of one, is the `message` library's job
+(see [Libraries](#libraries)), which is handed the field separator. Neither has
+hardware or timing in it, so all of it builds and is tested on the PC.
 
 | File | Job |
 |------|-----|
-| `message.c` | Builds a message as text from a description of it: its letter, how many fields it has, and its fields |
 | `messages.c` | The description of each type of message. The handshake's field is written in; a reading's fields are filled in each time one is sent |
-| `message_helpers.c` | Fills in a message's fields, from text or from numbers |
 | `reading_to_message.c` | A stored reading as the reading message: the one place that knows both |
 
 Every field is text by the time a message is built. A number is turned into
@@ -93,12 +93,13 @@ text first, as a signed 32-bit value, so the time field cannot go past
 |------|-----|-----------------|
 | `handlers.c` | The handler for each kind of message, and the function that is one pass of the main loop. Holds what lasts from pass to pass: the state, the awaiting flags and two times | Yes |
 | `outgoing.c` | Sends a message: builds it, sends it, and marks it as waiting for its answer | Yes |
-| `incoming.c` | The steps for a message that has arrived: take a field out, read a response into its parts, set the state from a status, remove an answered reading | No, it builds on a PC as it stands |
+| `incoming.c` | The steps for a message that has arrived: read a response into its parts, set the state from a status, remove an answered reading | No, it builds on a PC as it stands |
 | `routing.c` | The tables: which function a letter or a state leads to | Yes |
 | `scheduler.c` | Polls the UART: routes a message that has arrived, or gives up on a wait | Yes |
 | `states.c` | One function for each state | Yes |
 
-The headers of these two folders sit beside their source files.
+The headers of these two folders are in `include/app/messaging/` and
+`include/app/operations/`.
 
 **One pass of the main loop** is one function, `run_pass()`, which `main`
 calls for ever. It is handed the time and reads no clock:
@@ -165,6 +166,7 @@ same letters (see [Config](#config)).
 | `link/` | Text lines to and from the bridge, over a UART |
 | `debug/` | Text to the PC's serial monitor, over a UART |
 | `format/` | Numbers to text, and text to a number |
+| `message/` | A message as text: building one from its letter and fields, and getting a field out of one |
 | `time/` | Whether an interval has passed |
 
 ### File names in `lib/`
@@ -194,6 +196,8 @@ lib/
             link_framing.c          collects received bytes into a line
   debug/    debug.c                 writes text and numbers to the debug UART
   format/   format_number.c         a number to decimal or hexadecimal text, and decimal text to a number
+  message/  message_build.c         a message as text, from its letter and fields
+            message_fields.c        filling a message's fields in, and getting a field out of a message
   time/     time_interval.c         whether an interval has passed since an earlier moment
 ```
 

@@ -6,6 +6,7 @@
 #include "protocol.h"
 #include "handlers.h"
 #include "incoming.h"
+#include "message_fields.h"
 #include "outgoing.h"
 #include "states.h"
 
@@ -61,7 +62,7 @@ void response_router(const char *text)
 {
     char letter[2];
 
-    if (!get_field(text, 0, letter, sizeof(letter))) {
+    if (!get_field(text, PROTOCOL_FIELD_SEPARATOR, 0, letter, sizeof(letter))) {
         return;
     }
     call_route(response_routes, letter[0], text);

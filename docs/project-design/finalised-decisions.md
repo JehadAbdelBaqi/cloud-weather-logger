@@ -74,7 +74,8 @@ What this project uses and how it is put together: the decisions made and still 
 - One set of link settings and handshake timings for both boards
 - One function is one pass of the main loop: the jobs done in every state, then the function of the state the Nucleo is in
 - The sensor code in `src/app/sensor/`: it only measures, and hands each reading back to its caller
-- Building messages in `src/app/messaging/`; deciding what is sent, and handling what arrives, in `src/app/operations/`
+- Building a message, and getting a field out of one, in one library, `message`, which is handed the field separator
+- This project's messages in `src/app/messaging/`; deciding what is sent, and handling what arrives, in `src/app/operations/`
 - An incoming message routed by its first letter, and a response then by its second, through tables in one file
 - The status of a response sets the state the Nucleo is in
 - A message built by one function from a description of its type, with every field already text
