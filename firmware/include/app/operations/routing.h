@@ -3,11 +3,15 @@
 
 #include <stdint.h>
 
-// A function a route leads to
-typedef void (*route_handler_t)(void);
+#include "app_state.h"
+#include "states.h"
 
-// A function an incoming route leads to: it is handed the message that arrived
-typedef void (*incoming_handler_t)(const char *text);
+// A function a route leads to: it is handed the program's running state
+typedef void (*route_handler_t)(app_state_t *state);
+
+// A function an incoming route leads to: it is handed the program's running state and the message
+// that arrived
+typedef void (*incoming_handler_t)(app_state_t *state, const char *text);
 
 // How many positions the incoming table has: one for every character a letter can be
 #define INCOMING_ROUTES_SIZE 128
@@ -20,15 +24,8 @@ extern const incoming_handler_t incoming_routes[INCOMING_ROUTES_SIZE];
 extern const incoming_handler_t response_routes[INCOMING_ROUTES_SIZE];
 
 // Described in routing.c
-void call_route(const incoming_handler_t table[], char letter, const char *text);
-void response_router(const char *text);
-
-// The keys for the states: names for the positions in the state table
-typedef enum {
-    STATE_OK,           // everything is answering
-    STATE_NO_RESPONSE,  // a message went out and no response came back in time
-    STATE_COUNT,        // how many states there are
-} state_key_t;
+void call_route(const incoming_handler_t table[], char letter, app_state_t *state, const char *text);
+void response_router(app_state_t *state, const char *text);
 
 // The table of states: the function for each state sits at that state's position
 extern const route_handler_t state_routing[STATE_COUNT];

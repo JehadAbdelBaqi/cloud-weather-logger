@@ -73,6 +73,7 @@ What this project uses and how it is put together: the decisions made and still 
 - A value is defined once; the bridge is handed its settings in `bridge_config.h`, filled from the project's own definitions
 - One set of link settings and handshake timings for both boards
 - One function is one pass of the main loop: the jobs done in every state, then the function of the state the Nucleo is in
+- What lasts from one pass to the next is one struct, declared in `main.c` and handed to every function that needs it
 - The sensor code in `src/app/sensor/`: it only measures, and hands each reading back to its caller
 - Building a message, and getting a field out of one, in one library, `message`, which is handed the field separator
 - This project's messages in `src/app/messaging/`; deciding what is sent, and handling what arrives, in `src/app/operations/`

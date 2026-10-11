@@ -91,21 +91,30 @@ text first, as a signed 32-bit value, so the time field cannot go past
 
 | File | Job | Needs the board |
 |------|-----|-----------------|
-| `handlers.c` | The handler for each kind of message, and the function that is one pass of the main loop. Holds what lasts from pass to pass: the state, the awaiting flags and two times | Yes |
+| `run_pass.c` | The function that is one pass of the main loop | Yes |
+| `message_handlers.c` | The handler for each kind of message, going out and coming in | Yes |
 | `outgoing.c` | Sends a message: builds it, sends it, and marks it as waiting for its answer | Yes |
 | `incoming.c` | The steps for a message that has arrived: read a response into its parts, set the state from a status, remove an answered reading | No, it builds on a PC as it stands |
 | `routing.c` | The tables: which function a letter or a state leads to | Yes |
-| `scheduler.c` | Polls the UART: routes a message that has arrived, or gives up on a wait | Yes |
-| `states.c` | One function for each state | Yes |
+| `poll_uart.c` | Polls the UART: routes a message that has arrived, or gives up on a wait | Yes |
+| `states.c` | One function for each state, and the function that runs the current one | Yes |
+| `status_led.c` | Blinks the LED to show the state | Yes |
 
 The headers of these two folders are in `include/app/messaging/` and
 `include/app/operations/`.
 
+**What lasts from pass to pass** is one struct, `app_state_t` in
+`include/app/operations/app_state.h`: the state, the awaiting flags, two
+times, and the sensor's own two (when it was last read and how often it is
+read, a struct of their own from `sensor_timer.h`). It is declared once, in `main.c`, and handed to every function that
+needs it, through the route tables too. No file in `operations/` keeps any of
+it for itself.
+
 **One pass of the main loop** is one function, `run_pass()`, which `main`
-calls for ever. It is handed the time and reads no clock:
+calls for ever. It is handed the struct and the time, and reads no clock:
 
 ```
-run_pass(time)
+run_pass(state, time)
    │
    ├─ take a reading if one is due, and put it in the store      every state
    ├─ poll the UART: route a message, or give up on a wait       every state

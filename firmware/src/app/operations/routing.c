@@ -4,7 +4,7 @@
 
 #include "config.h"
 #include "protocol.h"
-#include "handlers.h"
+#include "message_handlers.h"
 #include "incoming.h"
 #include "message_fields.h"
 #include "outgoing.h"
@@ -30,15 +30,17 @@ const route_handler_t state_routing[STATE_COUNT] = {
 };
 
 /**
- * @brief Calls the function a letter leads to in a table of routes, handing it the message.
+ * @brief Calls the function a letter leads to in a table of routes, handing it the program's
+ *        running state and the message.
  *
  * A letter with no function in the table is ignored: nothing is called.
  *
  * @param table  The table of routes, with INCOMING_ROUTES_SIZE positions
  * @param letter The letter that picks the route
+ * @param state  The program's running state, handed on to the function
  * @param text   The message received, handed on to the function
  */
-void call_route(const incoming_handler_t table[], char letter, const char *text)
+void call_route(const incoming_handler_t table[], char letter, app_state_t *state, const char *text)
 {
     unsigned char position = (unsigned char)letter;
 
@@ -48,7 +50,7 @@ void call_route(const incoming_handler_t table[], char letter, const char *text)
     if (table[position] == NULL) {
         return;
     }
-    table[position](text);
+    table[position](state, text);
 }
 
 /**
@@ -56,14 +58,15 @@ void call_route(const incoming_handler_t table[], char letter, const char *text)
  *
  * A response with no second letter is ignored.
  *
- * @param text The response received: L,<letter>,<first field>,<status>
+ * @param state The program's running state, handed on to the handler
+ * @param text  The response received: L,<letter>,<first field>,<status>
  */
-void response_router(const char *text)
+void response_router(app_state_t *state, const char *text)
 {
     char letter[2];
 
     if (!get_field(text, PROTOCOL_FIELD_SEPARATOR, 0, letter, sizeof(letter))) {
         return;
     }
-    call_route(response_routes, letter[0], text);
+    call_route(response_routes, letter[0], state, text);
 }
