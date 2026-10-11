@@ -5,6 +5,9 @@ PlatformIO (`framework = stm32cube`).
 
 [← README](../../README.md)
 
+> **Built in `v0.1.0`:** everything on this page, apart from the real time on a
+> reading and the test in CI, which are marked as planned.
+
 ## Peripherals
 
 | Peripheral | Device | Use |
@@ -12,7 +15,7 @@ PlatformIO (`framework = stm32cube`).
 | USART1 (PA9 TX / PA10 RX) | Wi-Fi bridge | Protocol lines |
 | USART2 (via ST-LINK USB) | PC serial monitor | Debug output only |
 | I2C | BME280 | Temperature / pressure / humidity |
-| RTC on the LSE crystal | — | Timestamps |
+| RTC on the LSE crystal | — | Timestamps. *Planned, not built* |
 
 ## Code layout
 
@@ -332,16 +335,24 @@ is renumbered when they are sent later.
 
 ## Time
 
+**In `v0.1.0` the time on a reading is a stand-in:** a fixed starting time,
+`READING_TIME_START` in `config.h`, plus the seconds since the Nucleo was
+switched on. It counts up one second per second and starts again at every
+power-on. A reading is given its time when it is taken, so readings sent late
+or sent again keep their order and their spacing.
+
+*Planned, not built:*
+
 - Readings are timestamped on the Nucleo by its RTC, driven by the on-board
   32.768 kHz LSE crystal (X2 on the MB1136 C-04 board).
-- The bridge sends the real time down the UART (`T` line) on connect and hourly.
-- No readings are taken after a power-up until the first `T` has set the clock.
-- Readings sent again from the store carry their original sample time.
+- The real time is sent down to the Nucleo to set that clock.
+- No readings are taken after a power-up until the clock has been set.
 
 ## Commands
 
-`help`, `read` and `rate` — arriving as `C` lines from the server, through the
-broker and the bridge, and each answered with an `R` line. Formats and replies
+`help`, `read` and `rate` — arriving as `C` lines through the broker and the
+bridge, and each answered with an `R` line. In `v0.1.0` they are published to
+the broker by hand or by the tests; the server that will send them is planned. Formats and replies
 in [protocol.md](protocol.md#c--r--commands-and-replies).
 
 ```
@@ -408,7 +419,7 @@ C,<id>,<number>,<value> arrives
   The bridge's limit is worked out from `config.h`, as `bridge_config.h` works
   it out. The bridge's log is read from its USB serial port, found by its name
   under `/dev/serial/by-id`, so both boards have to be plugged into the PC.
-- **Hardware-in-the-loop test in CI** — see [deployment.md](deployment.md).
+- **Hardware-in-the-loop test in CI** — *planned, not built*; see [deployment.md](deployment.md).
 
 ## See also
 
