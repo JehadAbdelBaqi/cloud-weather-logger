@@ -19,28 +19,28 @@
  */
 void handle_handshake(app_state_t *state)
 {
-    send_outgoing_message(handshake_message, &state->awaiting_handshake_ack, state->now_ms, &state->sent_ms);
+    send_outgoing_message(handshake_message, &state->awaiting_ack, state->now_ms, &state->sent_ms);
 }
 
 /**
  * @brief Handles a reading going out: turns it into the reading message and sends it.
  *
- * Does nothing while an earlier reading is still waiting for its answer.
+ * Does nothing while an earlier message, of any kind, is still waiting for its answer.
  *
  * @param state  The program's running state
  * @param stored The stored reading to send
  */
 void handle_reading(app_state_t *state, const stored_reading_t *stored)
 {
-    // Checked first, so that a pass spent waiting for the answer stays short: turning the reading
+    // Checked first, so that a pass spent waiting for an answer stays short: turning the reading
     // into text takes longer than one byte takes to arrive, and bytes of the answer would be lost
-    if (state->awaiting_reading_ack) {
+    if (state->awaiting_ack) {
         return;
     }
     char texts[PROTOCOL_FIELDS_READING][FORMAT_SIGNED_SIZE];
 
     reading_to_message(stored, &reading_message, texts);
-    send_outgoing_message(reading_message, &state->awaiting_reading_ack, state->now_ms, &state->sent_ms);
+    send_outgoing_message(reading_message, &state->awaiting_ack, state->now_ms, &state->sent_ms);
 }
 
 /**
@@ -56,7 +56,7 @@ void handle_weather_reading_ack(app_state_t *state, const char *text)
 {
     response_t response;
 
-    if (!read_response(text, &state->awaiting_reading_ack, &response)) {
+    if (!read_response(text, &state->awaiting_ack, &response)) {
         return;
     }
     handle_status(response.status, &state->current_state);
@@ -75,7 +75,7 @@ void handle_handshake_ack(app_state_t *state, const char *text)
 {
     response_t response;
 
-    if (!read_response(text, &state->awaiting_handshake_ack, &response)) {
+    if (!read_response(text, &state->awaiting_ack, &response)) {
         return;
     }
     handle_status(response.status, &state->current_state);

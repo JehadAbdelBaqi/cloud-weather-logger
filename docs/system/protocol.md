@@ -192,8 +192,9 @@ give their values, so that it cannot disagree with the file.
 
 | Setting | What it does | Raising it | Lowering it |
 |---------|--------------|------------|-------------|
-| `HANDSHAKE_QUIET_LIMIT_MS` | On the Nucleo: how long since the last line it sent before it gives up on any answer and sends the handshake | A lost bridge is noticed later; fewer handshakes on a quiet link | A lost bridge is noticed sooner; set at or below the reading interval, a handshake goes out between readings on a working link |
+| `ACK_QUIET_LIMIT_MS` | On the Nucleo: how long since the last line it sent before it gives up on any answer and sends the handshake | A lost bridge is noticed later; fewer handshakes on a quiet link | A lost bridge is noticed sooner; set at or below the reading interval, a handshake goes out between readings on a working link |
 | `BRIDGE_ANSWER_BUFFER_MS` | How much sooner than the quiet limit the bridge answers, whatever the broker has done | The bridge gives the broker less time to confirm a line | The bridge's answer arrives closer to the moment the Nucleo gives up |
+| `MCU_QUIET_BUFFER_MS` | How much longer than the quiet limit the bridge hears nothing from the Nucleo before it counts the Nucleo as gone | A lost Nucleo is shown later | A lost Nucleo is shown sooner; too short, and an ordinary gap between its lines is taken for a loss |
 
 - **The bridge waits for the broker for the quiet limit less the buffer**, then
   answers `err_br`. Its answer therefore always reaches the Nucleo before the
@@ -203,17 +204,18 @@ give their values, so that it cannot disagree with the file.
   (`SENSOR_READ_INTERVAL_MS`), so on a working link a reading always goes out
   before the limit runs out, and the handshake is sent at start-up and after a
   missed answer only.
-- **The bridge counts the Nucleo as quiet** when it has heard nothing from it
-  for a time worked out from the same settings, and as gone after as long
-  again.
+- **The bridge counts the Nucleo as gone** when it has heard nothing from it
+  for the quiet limit and `MCU_QUIET_BUFFER_MS` after it. The Nucleo sends
+  something at least once every quiet limit, so a longer silence is the Nucleo
+  or the wires. The build stops if that buffer is under a second.
 
 | | No response | Ok |
 |---|---|---|
 | Nucleo's user LED | Fast blink (`LED_CONNECTING_BLINK_MS`) | Slow blink (`LED_CONNECTED_BLINK_MS`) |
 
-| | Handshake not yet answered | Nucleo heard from | Nucleo quiet | Nucleo gone |
-|---|---|---|---|---|
-| Bridge's LED | Blinks red | Shows Wi-Fi and broker state | Flashes green, fast | Blinks red |
+| | Handshake not yet answered | Nucleo heard from | Nucleo gone |
+|---|---|---|---|
+| Bridge's LED | Blinks red | Shows Wi-Fi and broker state | Blinks red |
 
 ## UART settings
 

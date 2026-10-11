@@ -10,9 +10,7 @@
 // What lasts from one pass of the main loop to the next. Declared once, in main.c, and handed to
 // every function that needs it
 typedef struct app_state {
-    bool awaiting_handshake_ack;  // true while a handshake (H) is out and not answered yet
-    bool awaiting_reading_ack;    // true while a reading (W) is out and not answered yet
-    bool awaiting_reply_ack;      // true while a reply (R) is out and not answered yet
+    bool awaiting_ack;            // true while a message is out and not answered yet, whatever its kind
     uint32_t now_ms;              // the time now: the same for the whole of one pass
     uint32_t sent_ms;             // the time the last message went out
     state_key_t current_state;    // the state the program is in

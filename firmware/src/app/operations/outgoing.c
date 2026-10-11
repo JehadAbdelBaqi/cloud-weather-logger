@@ -11,10 +11,11 @@
 /**
  * @brief Sends a message going out: constructs it and sends it.
  *
- * Sends nothing while an earlier message is still waiting for its answer.
+ * Sends nothing while an earlier message, of any kind, is still waiting for its answer: one
+ * message is out at a time.
  *
  * @param message      The message to send
- * @param awaiting_ack The flag for this message: true while it is out and not answered yet. Set
+ * @param awaiting_ack The awaiting flag: true while a message is out and not answered yet. Set
  *                     to true once the message is sent
  * @param now_ms       The time now
  * @param sent_ms      Set to the time now once the message is sent

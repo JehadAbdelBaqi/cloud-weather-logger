@@ -41,7 +41,7 @@ includes no code, so the bridge's build can read them as well as the Nucleo's.
 | File | Holds |
 |------|-------|
 | `board_config.h` | How the board is wired: every pin assignment, and the baud rate and line limit of the link to the bridge |
-| `config.h` | Tunable values: the link's quiet limit and the margin the bridge answers within, the LED's blink times, how often the sensor is read, the limits a `rate` command may set and how many readings the store holds. These are choices, changed here at any time; the docs name them and do not repeat their values |
+| `config.h` | Tunable values: the link's quiet limit, the margin the bridge answers within and the margin after which it counts the Nucleo as gone, the LED's blink times, how often the sensor is read, the limits a `rate` command may set and how many readings the store holds. These are choices, changed here at any time; the docs name them and do not repeat their values |
 | `protocol.h` | The letter of each line type, the field separator, the command words and the fixed words |
 | `topic_routes.h` | The MQTT topic for each line type that goes through the broker |
 | `bridge_config.h` | What is handed to the bridge's build |
@@ -104,7 +104,7 @@ The headers of these two folders are in `include/app/messaging/` and
 `include/app/operations/`.
 
 **What lasts from pass to pass** is one struct, `app_state_t` in
-`include/app/operations/app_state.h`: the state, the awaiting flags, two
+`include/app/operations/app_state.h`: the state, the awaiting flag, two
 times, and the sensor's own two (when it was last read and how often it is
 read, a struct of their own from `sensor_timer.h`). It is declared once, in `main.c`, and handed to every function that
 needs it, through the route tables too. No file in `operations/` keeps any of
@@ -129,10 +129,11 @@ run_pass(state, time)
 | No response | Sends the handshake | At start-up; when the quiet limit passes; when a response has a status other than `ok` |
 | Ok | Sends the oldest reading in the store, if there is one | A response has the status `ok` |
 
-**A message is sent once and then waited on.** Each kind of message the Nucleo
-sends has an awaiting flag, set when one goes out and cleared when its
-response arrives. While the flag is set nothing of that kind is sent, and no
-work is done to prepare one.
+**One message is out at a time, whatever its kind.** There is one awaiting
+flag, set when a message goes out and cleared when its response arrives. While
+it is set nothing is sent, a handshake, a reading or a reply, and no work is
+done to prepare one. The bridge holds one message while it waits for the
+broker, so a second one sent in that time would cost the first its answer.
 
 **A message that arrives is routed through tables**, each indexed by the
 letter that picks the route:
@@ -148,13 +149,13 @@ second letter     H  ──► the handshake's response
 ```
 
 A letter with no route is ignored. Each response handler reads the response
-into its three parts, which clears the awaiting flag for that kind of
-message, and sets the state from the status. The reading's handler then
+into its three parts, which clears the awaiting flag, and sets the state from
+the status. The reading's handler then
 removes that reading from the store if the state is ok.
 
 **The quiet limit** is checked where the UART is polled. When it has passed
 since the last message was sent, the Nucleo goes to the no-response state and
-every awaiting flag is cleared, so the handshake goes out, and after it the
+the awaiting flag is cleared, so the handshake goes out, and after it the
 reading that was held. This covers both a message that got no answer and a
 link that has simply gone quiet.
 

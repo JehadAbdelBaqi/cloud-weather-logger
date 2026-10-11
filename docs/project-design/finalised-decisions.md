@@ -71,7 +71,7 @@ What this project uses and how it is put together: the decisions made and still 
 - The commands in a table of words and the functions that carry them out
 - The MQTT topics in `topic_routes.h`
 - A value is defined once; the bridge is handed its settings in `bridge_config.h`, filled from the project's own definitions
-- One set of link settings and handshake timings for both boards
+- One set of link settings and timings for both boards
 - One function is one pass of the main loop: the jobs done in every state, then the function of the state the Nucleo is in
 - What lasts from one pass to the next is one struct, declared in `main.c` and handed to every function that needs it
 - The sensor code in `src/app/sensor/`: it only measures, and hands each reading back to its caller
@@ -84,6 +84,7 @@ What this project uses and how it is put together: the decisions made and still 
 - The datasheet's integer formulas for the BME280 compensation
 - Readings are timestamped on the Nucleo, with a stand-in time until the RTC is set up
 - Readings are put into a store in memory and sent from there, one at a time, each staying until it is acknowledged
+- One message is out at a time, whatever its kind: the next is sent once the one before is answered
 - A reading's sequence number and time are given when it is stored
 - The bridge answers every line: an acknowledgement once the broker has it, or a report that it has not gone through
 - The bridge reports the state of its connection upstream

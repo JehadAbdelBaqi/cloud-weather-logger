@@ -32,8 +32,8 @@ void handle_status(const char *status, state_key_t *current_state)
  * @brief Reads a response coming in into its three fields: L,<letter>,<first field>,<status>.
  *
  * @param text         The response received
- * @param awaiting_ack The flag for the message this is the response to: set to false, as its
- *                     answer has arrived
+ * @param awaiting_ack The awaiting flag: set to false, as the answer to the message that was
+ *                     out has arrived
  * @param response     Filled in with the three fields
  * @return true if the response had all three fields
  */

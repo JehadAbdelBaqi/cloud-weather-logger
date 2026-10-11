@@ -49,10 +49,12 @@
 // Logs every line in both directions. 1 on, 0 off
 #define LOG_LINES 1
 
-// How long with no line from the Nucleo before the bridge's LED shows it as quiet; after as long
-// again the Nucleo counts as gone. Longer than the Nucleo's own quiet limit and a request or two
-// after it, so that the Nucleo's ordinary silences are not shown
-#define MCU_QUIET_LIMIT_MS (HANDSHAKE_QUIET_LIMIT_MS + 2 * HANDSHAKE_REQUEST_INTERVAL_MS)
+// How long with no line from the Nucleo before the bridge counts it as gone. The Nucleo sends
+// something at least once every quiet limit, so this is that limit and a margin after it
+#if MCU_QUIET_BUFFER_MS < 1000
+#error "MCU_QUIET_BUFFER_MS in config.h must be at least 1000"
+#endif
+#define MCU_QUIET_LIMIT_MS (ACK_QUIET_LIMIT_MS + MCU_QUIET_BUFFER_MS)
 
 // How long the bridge waits for the broker to confirm a line before it answers the Nucleo that
 // the line has not gone through. Worked out from the Nucleo's quiet limit, so it is always the
@@ -60,9 +62,9 @@
 #if BRIDGE_ANSWER_BUFFER_MS < 1000
 #error "BRIDGE_ANSWER_BUFFER_MS in config.h must be at least 1000"
 #endif
-#if BRIDGE_ANSWER_BUFFER_MS >= HANDSHAKE_QUIET_LIMIT_MS
-#error "BRIDGE_ANSWER_BUFFER_MS in config.h must be less than HANDSHAKE_QUIET_LIMIT_MS"
+#if BRIDGE_ANSWER_BUFFER_MS >= ACK_QUIET_LIMIT_MS
+#error "BRIDGE_ANSWER_BUFFER_MS in config.h must be less than ACK_QUIET_LIMIT_MS"
 #endif
-#define BROKER_CONFIRM_LIMIT_MS (HANDSHAKE_QUIET_LIMIT_MS - BRIDGE_ANSWER_BUFFER_MS)
+#define BROKER_CONFIRM_LIMIT_MS (ACK_QUIET_LIMIT_MS - BRIDGE_ANSWER_BUFFER_MS)
 
 #endif

@@ -3,14 +3,17 @@
 
 // The Nucleo firmware's tunable values. All times are in milliseconds.
 
-// Handshake with the bridge ("H,request" / "H,ack")
-#define HANDSHAKE_REQUEST_INTERVAL_MS 2000  // how often the request is repeated while it goes unanswered
-#define HANDSHAKE_QUIET_LIMIT_MS      6000  // once connected: how long with no line from the bridge before asking
-#define HANDSHAKE_MISSED_LIMIT        5     // unanswered requests in a row before the connection counts as lost
+// How long since the last message went out, with nothing back from the bridge, before the Nucleo
+// gives up on any answer and sends a handshake. For every kind of message, the handshake included
+#define ACK_QUIET_LIMIT_MS 6000
 
 // How much sooner than the quiet limit the bridge answers a line ("L"), so that its answer always
-// arrives before the Nucleo starts asking. At least 1000, and less than the quiet limit
+// arrives before the Nucleo starts asking. At least 1000, and less than ACK_QUIET_LIMIT_MS
 #define BRIDGE_ANSWER_BUFFER_MS 2000
+
+// How much longer than ACK_QUIET_LIMIT_MS the bridge hears nothing from the Nucleo before it counts
+// the Nucleo as gone. At least 1000
+#define MCU_QUIET_BUFFER_MS 2000
 
 // User LED: on / off time while the connection to the bridge is being made, and once it is made
 #define LED_CONNECTING_BLINK_MS 100
