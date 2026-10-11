@@ -38,8 +38,10 @@ What this project uses and how it is put together: the decisions made and still 
 - One script, `build.sh`, builds and uploads both boards; its steps are switched in `build-config.sh`
 - The bridge repository's test broker is the broker side until this project's server stack exists
 - A handshake between the Nucleo and the bridge before the link is used, and a watch on it afterwards
+- Only the Nucleo asks in the handshake; the bridge answers, and takes any line from the Nucleo as proof it is there
 - The Nucleo counts the connection as made only when the bridge answers the Nucleo's own request
-- Polled UART receive on the Nucleo
+- The bridge answers the handshake request with the same line type as any other line, and the result says whether it can reach Wi-Fi and the broker
+- Interrupt-driven UART receive on the Nucleo, into a buffer in memory
 
 ## The protocol
 
@@ -50,6 +52,9 @@ What this project uses and how it is put together: the decisions made and still 
 - Readings carry a sequence number and are acknowledged cumulatively
 - The time is sent down to the Nucleo to set its RTC
 - Commands and replies carry an ID
+- The first field of every line sent up is its sequence number or ID
+- The bridge answers a line with one line type, carrying that line's letter, its first field and the result
+- Every response to the Nucleo is that one line type, from the bridge or from the server; a command is the other kind of line it receives
 - A `read` command produces a normal reading line
 
 ## The Nucleo firmware
@@ -67,13 +72,21 @@ What this project uses and how it is put together: the decisions made and still 
 - The MQTT topics in `topic_routes.h`
 - A value is defined once; the bridge is handed its settings in `bridge_config.h`, filled from the project's own definitions
 - One set of link settings and handshake timings for both boards
-- The code for lines to and from the bridge in `src/app/messaging/`: one handler for each line type, built from shared functions
+- The main loop as a state machine, with one function for each state
+- The sensor code in `src/app/sensor/`: it only measures, and hands each reading back to its caller
+- The code for lines to and from the bridge in `src/app/messaging/`, built from shared functions
+- An incoming line routed by its first letter, and a response then by its second, with every mapping in one file
+- The status of a response picks what is done and the state the Nucleo moves to
+- The state machine in `src/app/state_machine/`: the states, the functions they are built from, and the current state, each in a file of its own
 - Building a line and finding its fields in one hardware-free file, tested on the PC
 - The internal 16 MHz oscillator as the system clock
 - The datasheet's integer formulas for the BME280 compensation
 - Readings are timestamped on the Nucleo, with a stand-in time until the RTC is set up
 - Readings are put into a store in memory and sent from there, one at a time, each staying until it is acknowledged
-- The bridge acknowledges a reading once the broker has it, and reports the state of its connection upstream
+- A reading's sequence number and time are given when it is stored
+- The bridge answers every line: an acknowledgement once the broker has it, or a report that it has not gone through
+- The bridge reports the state of its connection upstream
+- A line the bridge does not answer in time sends the Nucleo back to the handshake
 - Store-and-forward driven by acknowledgements
 - The sequence number starts again at power-on
 - Unit tests on the PC, for the code that touches no hardware, written alongside new logic

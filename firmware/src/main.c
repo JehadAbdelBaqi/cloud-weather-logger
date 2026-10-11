@@ -2,10 +2,8 @@
 
 #include "board.h"
 #include "debug.h"
-#include "polling.h"
-#include "protocol.h"
-#include "router.h"
 #include "sensor.h"
+#include "state_machine.h"
 #include "status.h"
 
 /**
@@ -31,9 +29,7 @@ int main(void)
     sensor_init();
 
     while (1) {
-        router_poll();
-        polling_send_when_due(PROTOCOL_LETTER_HANDSHAKE, PROTOCOL_HANDSHAKE_REQUEST);
+        state_machine_run();
         status_poll();
-        sensor_poll();
     }
 }

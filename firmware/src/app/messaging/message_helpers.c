@@ -17,11 +17,6 @@ void send_word(char letter, const char *word)
     link_send_line(line);
 }
 
-void send_handshake(const char *word)
-{
-    send_word(PROTOCOL_LETTER_HANDSHAKE, word);
-}
-
 bool send_reply(const char *id, const char *result)
 {
     char line[LINE_BUFFER_SIZE];
@@ -33,6 +28,20 @@ bool send_reply(const char *id, const char *result)
     line_start(line, PROTOCOL_LETTER_REPLY);
     line_add_field(line, id);
     line_add_field(line, result);
+    return link_send_line(line);
+}
+
+bool send_reading(const stored_reading_t *stored)
+{
+    char line[LINE_BUFFER_SIZE];
+
+    line_start(line, PROTOCOL_LETTER_READING);
+    line_add_number(line, stored->seq);
+    line_add_number(line, stored->time);
+    line_add_signed(line, stored->reading.temperature);
+    line_add_number(line, stored->reading.pressure);
+    line_add_number(line, stored->reading.humidity);
+
     return link_send_line(line);
 }
 
