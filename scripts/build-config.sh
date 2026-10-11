@@ -7,6 +7,7 @@ PROJECT_STEPS=(
     "1 steps/build-and-upload-nucleo.sh"
     "1 steps/build-and-upload-bridge.sh"
     "1 steps/test-nucleo.sh"
+    "1 steps/test-connections.sh"
 )
 
 # The bridge's steps, run by the bridge's own e2e.sh when build-and-upload-bridge.sh is on

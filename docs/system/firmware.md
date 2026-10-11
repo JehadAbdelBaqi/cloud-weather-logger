@@ -390,6 +390,16 @@ C,<id>,<number>,<value> arrives
   each step that ran, on both boards, with `success`, `FAILED` or `not run`. The topics are read from
   `firmware/include/config/topic_routes.h`, and the checks themselves are the
   bridge's own test helpers, used with this project's topics.
+- **A test of the connection between the two boards** — `scripts/steps/test-connections.sh`,
+  a step of `scripts/build.sh` after the one above. No wire is touched:
+
+  | Check | Proves |
+  |-------|--------|
+  | The Nucleo is halted through its debugger for longer than the bridge's limit, then restarted. The bridge's log has to say the connection was lost and then made, and a reading has to arrive afterwards | The bridge counts a silent Nucleo as gone, and takes it back when its handshake is answered |
+
+  The bridge's limit is worked out from `config.h`, as `bridge_config.h` works
+  it out. The bridge's log is read from its USB serial port, found by its name
+  under `/dev/serial/by-id`, so both boards have to be plugged into the PC.
 - **Hardware-in-the-loop test in CI** — see [deployment.md](deployment.md).
 
 ## See also
