@@ -131,3 +131,174 @@ check_rate_changes_timing() {
     check_reading_gap "$1" "$2" "$3" "$6" $((doubled_s - 1)) $((doubled_s * 3 + 10))
     check_command "$1" "$2" "$3" "$4" "$5" "rate $built_in_s" "ok"
 }
+
+# Prints the sequence number of a reading: the field after the letter in W,<seq>,<time>,...
+# Arguments: <reading>
+reading_seq() {
+    echo "$1" | cut -d, -f2
+}
+
+# Collects readings from the readings topic and prints them, one per line.
+# Arguments: <project name> <address> <port> <readings topic> <how many> <seconds to wait>
+# Returns: 1 if fewer than that arrived in time
+collect_readings() {
+    local project_name="$1"
+    local address="$2"
+    local port="$3"
+    local topic="$4"
+    local count="$5"
+    local timeout="$6"
+    local cert_dir="$HOME/certs/$project_name"
+    local connection=(-h "$address" -p "$port" --cafile "$cert_dir/ca.crt" --cert "$cert_dir/client.crt" --key "$cert_dir/client.key")
+
+    # mosquitto_sub ends with an error code when its time is up before it has them all
+    mosquitto_sub "${connection[@]}" -t "$topic" -C "$count" -W "$timeout" 2> /dev/null
+}
+
+# Checks that the sequence numbers of readings go up by one from each reading to the next.
+# Arguments: <sequence number the first reading must have, or "any"> <the readings, one per line>
+# Returns: 1 at the first reading that is out of step, after saying which
+seqs_go_up_by_one() {
+    local expected="$1"
+    local readings="$2"
+    local reading
+    local seq
+
+    while read -r reading; do
+        seq=$(reading_seq "$reading")
+        if [ "$expected" != "any" ] && [ "$seq" != "$expected" ]; then
+            echo "Reading $seq arrived where reading $expected was expected." >&2
+            return 1
+        fi
+        expected=$((seq + 1))
+    done <<< "$readings"
+}
+
+# Reads readings as they arrive and prints the first gap between two in a row that is within a
+# range, in seconds. Gaps outside the range are passed over: readings that were held back arrive
+# in a burst before the usual timing is back.
+# Arguments: <fewest seconds> <most seconds>
+# Returns: 1 if the readings ended with no gap in the range
+first_gap_in_range() {
+    local fewest="$1"
+    local most="$2"
+    local last_at=0
+    local now
+    local gap
+
+    while read -r _; do
+        now=$(date +%s)
+        gap=$((now - last_at))
+        last_at="$now"
+        if [ "$gap" -ge "$fewest" ] && [ "$gap" -le "$most" ]; then
+            echo "$gap"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+# Stops the script unless each reading is sent once: over several readings in a row, the sequence
+# numbers go up by one, with none twice and none missing.
+# Arguments: <project name> <address> <port> <readings topic>
+#            <interval the firmware is built with, in milliseconds>
+check_readings_sent_once() {
+    local interval_s=$(($5 / 1000))
+    local count=4
+    local timeout=$((interval_s * count + 15))
+    local readings
+
+    echo "Collecting $count readings in a row on $4..."
+    if ! readings=$(collect_readings "$1" "$2" "$3" "$4" "$count" "$timeout"); then
+        echo "$count readings did not arrive within $timeout s." >&2
+        exit 1
+    fi
+    echo "$readings"
+
+    if ! seqs_go_up_by_one "any" "$readings"; then
+        echo "A reading was sent twice or left out." >&2
+        exit 1
+    fi
+
+    echo "Each reading is sent once."
+}
+
+# Stops the script unless readings arrive at the interval the firmware is built with: two in a
+# row that are that long apart, give or take a second.
+# Arguments: <project name> <address> <port> <readings topic>
+#            <interval the firmware is built with, in milliseconds>
+check_reading_interval() {
+    local project_name="$1"
+    local address="$2"
+    local port="$3"
+    local topic="$4"
+    local interval_s=$(($5 / 1000))
+    local timeout=$((interval_s * 4 + 30))
+    local cert_dir="$HOME/certs/$project_name"
+    local connection=(-h "$address" -p "$port" --cafile "$cert_dir/ca.crt" --cert "$cert_dir/client.crt" --key "$cert_dir/client.key")
+    local gap
+
+    echo "Timing readings on $topic until two in a row are $interval_s s apart..."
+
+    # The pipe hands over each reading as it arrives, so the clock is read at that moment.
+    # mosquitto_sub ends with an error code when the pipe closes or its time is up
+    gap=$(mosquitto_sub "${connection[@]}" -t "$topic" -W "$timeout" 2> /dev/null | first_gap_in_range $((interval_s - 1)) $((interval_s + 1))) || true
+
+    if [ -z "$gap" ]; then
+        echo "No two readings in a row were $interval_s s apart within $timeout s." >&2
+        exit 1
+    fi
+
+    echo "Readings are $gap s apart."
+}
+
+# Stops the script unless readings are kept while they cannot be delivered, and sent afterwards:
+# the broker is stopped for a few reading intervals and started again, and the readings taken
+# meanwhile then all arrive, oldest first, carrying on from the last one delivered before the stop.
+# The broker is started again before anything is checked.
+# Arguments: <project name> <address> <port> <readings topic>
+#            <interval the firmware is built with, in milliseconds> <multipass command> <vm name>
+check_readings_kept_while_broker_stopped() {
+    local interval_s=$(($5 / 1000))
+    local multipass="$6"
+    local vm_name="$7"
+    local missed=4
+    local stopped_s=$((interval_s * missed))
+    local count=$((missed + 1))
+    local before
+    local after
+    local last_seq
+
+    # 1. The last reading delivered before the stop
+    if ! before=$(collect_readings "$1" "$2" "$3" "$4" 1 $((interval_s * 2 + 10))); then
+        echo "No reading arrived before the broker was stopped." >&2
+        exit 1
+    fi
+    last_seq=$(reading_seq "$before")
+    echo "Last reading before the stop: $last_seq"
+
+    # 2. Stop the broker for long enough that several readings are taken, then start it again
+    echo "Stopping the broker for $stopped_s s..."
+    "$multipass" exec "$vm_name" -- sudo systemctl stop mosquitto
+    sleep "$stopped_s"
+    "$multipass" exec "$vm_name" -- sudo systemctl start mosquitto
+    echo "Broker started again."
+
+    # 3. Listen as soon as the broker is up, before the bridge has connected to it again
+    sleep 2
+    echo "Collecting the $count readings that follow reading $last_seq..."
+    if ! after=$(collect_readings "$1" "$2" "$3" "$4" "$count" 90); then
+        echo "The readings taken while the broker was stopped did not arrive within 90 s." >&2
+        exit 1
+    fi
+    echo "$after"
+
+    # 4. They carry on from the last one delivered, with none twice and none missing
+    if ! seqs_go_up_by_one $((last_seq + 1)) "$after"; then
+        echo "A reading taken while the broker was stopped was lost or sent twice." >&2
+        exit 1
+    fi
+
+    echo "Readings are kept while the broker is stopped, and arrive in order afterwards."
+}

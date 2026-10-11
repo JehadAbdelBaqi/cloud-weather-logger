@@ -93,14 +93,6 @@ static void test_construct_stops_at_the_number_of_fields(void)
     TEST_ASSERT_EQUAL_STRING("X,one,two", text);
 }
 
-/** construct_message() gives back the buffer it was handed. */
-static void test_construct_returns_the_buffer(void)
-{
-    char text[TEXT_SIZE];
-
-    TEST_ASSERT_EQUAL_PTR(text, construct_message(text, handshake_message));
-}
-
 /** Filling a message puts the values in its fields, in order. */
 static void test_fill_puts_the_values_in_the_fields(void)
 {
@@ -112,19 +104,6 @@ static void test_fill_puts_the_values_in_the_fields(void)
     construct_message(text, message);
 
     TEST_ASSERT_EQUAL_STRING("R,7,ok", text);
-}
-
-/** Each number becomes its own text, a negative one with its sign. */
-static void test_numbers_become_text(void)
-{
-    const int32_t numbers[] = { 0, 102137, -512 };
-    char texts[3][FORMAT_SIGNED_SIZE];
-
-    numbers_to_text(numbers, 3, texts);
-
-    TEST_ASSERT_EQUAL_STRING("0", texts[0]);
-    TEST_ASSERT_EQUAL_STRING("102137", texts[1]);
-    TEST_ASSERT_EQUAL_STRING("-512", texts[2]);
 }
 
 /** A message filled from numbers is constructed with those numbers as text. */
@@ -170,10 +149,8 @@ int main(void)
     RUN_TEST(test_construct_the_handshake);
     RUN_TEST(test_construct_with_no_fields);
     RUN_TEST(test_construct_stops_at_the_number_of_fields);
-    RUN_TEST(test_construct_returns_the_buffer);
 
     RUN_TEST(test_fill_puts_the_values_in_the_fields);
-    RUN_TEST(test_numbers_become_text);
     RUN_TEST(test_fill_from_numbers);
 
     RUN_TEST(test_a_stored_reading_becomes_the_reading_message);

@@ -35,6 +35,8 @@ test/
                                        its fields in, a stored reading as the reading message
             test_incoming/             getting a field out of a message, reading a response, setting
                                        the state from a status, removing an answered reading
+            test_reading_store/        holding readings until they are removed: oldest first,
+                                       sequence numbers, a full store
   bme280/   test_bme280_raw/           measurement bytes to raw values
             test_bme280_calibration/   calibration bytes to calibration values
             test_bme280_compensation/  raw values to real units

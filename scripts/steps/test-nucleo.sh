@@ -55,4 +55,15 @@ report_run "test: readings arrive" check_reading_arrives "$PROJECT_NAME" "$LAN_A
 # 5. The rate command changes how often readings arrive
 # report_run "test: rate changes the timing" check_rate_changes_timing "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$COMMANDS_TOPIC" "$REPLIES_TOPIC" "$READINGS_TOPIC" "$READ_INTERVAL_MS"
 
+# 6. Each reading is sent once
+report_run "test: readings sent once" check_readings_sent_once "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$READINGS_TOPIC" "$READ_INTERVAL_MS"
+
+# 7. Readings arrive at the interval the firmware is built with
+report_run "test: reading interval" check_reading_interval "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$READINGS_TOPIC" "$READ_INTERVAL_MS"
+
+# 8. Readings are kept while the broker is stopped, and arrive in order once it is back.
+# This stops the broker in the VM for a while, and starts it again
+# shellcheck disable=SC2153  # MULTIPASS and VM_NAME come from the bridge's settings
+report_run "test: readings kept while broker stopped" check_readings_kept_while_broker_stopped "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$READINGS_TOPIC" "$READ_INTERVAL_MS" "$MULTIPASS" "$VM_NAME"
+
 echo "Nucleo test passed."

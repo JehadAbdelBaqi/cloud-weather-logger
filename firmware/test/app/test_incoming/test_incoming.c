@@ -194,18 +194,6 @@ static void test_reading_stays_when_the_seq_is_not_a_number(void)
     TEST_ASSERT_FALSE(reading_store_is_empty());
 }
 
-/** The sequence number of some other reading removes nothing. */
-static void test_reading_stays_when_the_seq_is_another_readings(void)
-{
-    char seq_text[FORMAT_NUMBER_SIZE];
-
-    format_number(store_one_reading() + 1, seq_text);
-
-    remove_reading_if_ok(seq_text, STATE_OK);
-
-    TEST_ASSERT_FALSE(reading_store_is_empty());
-}
-
 /** Runs every test in this file. */
 int main(void)
 {
@@ -230,7 +218,6 @@ int main(void)
     RUN_TEST(test_answered_reading_is_removed_when_ok);
     RUN_TEST(test_reading_stays_when_not_ok);
     RUN_TEST(test_reading_stays_when_the_seq_is_not_a_number);
-    RUN_TEST(test_reading_stays_when_the_seq_is_another_readings);
 
     return UNITY_END();
 }

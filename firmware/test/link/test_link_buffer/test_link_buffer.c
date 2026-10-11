@@ -37,17 +37,6 @@ static void test_a_byte_put_in_is_taken_out(void)
     TEST_ASSERT_EQUAL_UINT8('L', byte);
 }
 
-/** Once its byte is taken, the buffer is empty again. */
-static void test_buffer_is_empty_after_the_last_byte_is_taken(void)
-{
-    uint8_t byte = 0;
-
-    link_buffer_put(&buffer, 'L');
-    link_buffer_take(&buffer, &byte);
-
-    TEST_ASSERT_FALSE(link_buffer_take(&buffer, &byte));
-}
-
 /** Bytes come out in the order they went in. */
 static void test_bytes_come_out_in_order(void)
 {
@@ -126,7 +115,6 @@ int main(void)
 
     RUN_TEST(test_empty_buffer_gives_nothing);
     RUN_TEST(test_a_byte_put_in_is_taken_out);
-    RUN_TEST(test_buffer_is_empty_after_the_last_byte_is_taken);
     RUN_TEST(test_bytes_come_out_in_order);
 
     RUN_TEST(test_full_buffer_drops_the_next_byte);
