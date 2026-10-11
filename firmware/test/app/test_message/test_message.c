@@ -50,6 +50,20 @@ static void test_a_stored_reading_becomes_the_reading_message(void)
     TEST_ASSERT_EQUAL_STRING("W,1042,1790812800,-512,101325,4550", text);
 }
 
+/** A reading's values become text in the order every reading sends them. */
+static void test_reading_values_become_text(void)
+{
+    char texts[READING_VALUE_COUNT][FORMAT_SIGNED_SIZE];
+    const reading_t reading = { .temperature = -512, .pressure = 101325, .humidity = 4550 };
+
+    reading_values_to_text(1790812800, &reading, texts);
+
+    TEST_ASSERT_EQUAL_STRING("1790812800", texts[0]);
+    TEST_ASSERT_EQUAL_STRING("-512", texts[1]);
+    TEST_ASSERT_EQUAL_STRING("101325", texts[2]);
+    TEST_ASSERT_EQUAL_STRING("4550", texts[3]);
+}
+
 /** The reply message is constructed as its letter, the command's ID and the result. */
 static void test_construct_a_reply(void)
 {
@@ -70,6 +84,7 @@ int main(void)
     RUN_TEST(test_construct_the_handshake);
 
     RUN_TEST(test_a_stored_reading_becomes_the_reading_message);
+    RUN_TEST(test_reading_values_become_text);
 
     RUN_TEST(test_construct_a_reply);
 

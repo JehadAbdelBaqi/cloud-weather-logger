@@ -14,7 +14,7 @@ The bridge routes each line by its first letter.
 | `A,<seq>` | down | Acknowledgement from the server: the reading is stored |
 | `L,<letter>,<first field>,<status>` | down | A response to a line the Nucleo sent up |
 | `T,<epoch>` | down | Set the time |
-| `C,<id>,<command>` | down | A command |
+| `C,<id>,<command>,<value>` | down | A command |
 | `H,request` | up | Handshake: "are you there?" |
 
 Up = Nucleo → server. Down = server → Nucleo. The `H` line goes no further than
@@ -113,39 +113,45 @@ InfluxDB.
 ## `C` / `R` — commands and replies
 
 ```
-C,<id>,<command>      down
-R,<id>,ok             up
-R,<id>,err <reason>   up
-R,<id>,<text>         up
+C,<id>,<command>           down   a command with no value
+C,<id>,<command>,<value>   down   a command with a value
+R,<id>,ok                  up
+R,<id>,err <reason>        up
+R,<id>,<text>              up
 ```
 
 The `id` is echoed in the reply, matching it to its command. It is chosen by
 whoever sends the command: any text of 1 to 16 characters with no comma in it.
 
-| Command | Does | Reply |
-|---------|------|-------|
-| `help` | Lists the commands | `R,<id>,help read rate <s>` |
-| `read` | Takes a reading now | A normal `W` line, then `R,<id>,ok` |
-| `rate <s>` | Sets how often readings are taken, in whole seconds, within the limits set in the config | `R,<id>,ok` |
+The command is sent as a number. Whoever sends it turns the command's name
+into its number; the numbers are defined in `firmware/include/config/protocol.h`.
 
-A reading taken by `read` is stored, acked and graphed like any other. The
-timed readings carry on at their own times.
+| Number | Name | Value | Does | Reply |
+|--------|------|-------|------|-------|
+| 1 | `help` | none | Lists the commands, each with its number | `R,<id>,1=help 2=read 3=rate` |
+| 2 | `read` | none | Takes a reading now | The reading itself: `R,<id>,<time>,<temperature>,<pressure>,<humidity>` |
+| 3 | `rate` | seconds | Sets how often readings are taken, in whole seconds, within the limits set in the config | `R,<id>,ok` |
+
+A reading taken by `read` goes up as the reply, with the command's ID in
+place of a sequence number, and ahead of any readings waiting to be sent. It
+is not one of the numbered readings. The timed readings carry on at their own
+times.
 
 ```
-C,7,rate 10      →   R,7,ok          a reading every 10 s from now on
-C,8,read         →   W,...  then  R,8,ok
-C,9,reboot       →   R,9,err unknown command
+C,7,3,10         →   R,7,ok          rate: a reading every 10 s from now on
+C,8,2            →   R,8,1791154900,2314,100900,5075          read: the reading is the reply
+C,9,42           →   R,9,err unknown command
 ```
 
 When a command cannot be carried out:
 
 | Reply | When |
 |-------|------|
-| `R,<id>,err unknown command` | The command is not one of the three. They are written in small letters |
+| `R,<id>,err unknown command` | The command is not the number of one of the three |
 | `R,<id>,err no command` | The line has an ID and nothing after it |
 | `R,<id>,err rate needs a number of seconds` | `rate` with no value, or one that is not a whole number |
 | `R,<id>,err rate out of range` | `rate` below `SENSOR_READ_INTERVAL_MIN_S` or above `SENSOR_READ_INTERVAL_MAX_S` |
-| `R,<id>,err no reading` | `read`, but the sensor could not be read or the reading could not be sent |
+| `R,<id>,err no reading` | `read`, but the sensor could not be read |
 | No reply | The line has no ID, or one longer than 16 characters: there is nothing to answer with |
 
 - **The interval set by `rate` lasts until the Nucleo restarts**, when it goes

@@ -21,6 +21,7 @@ fi
 SCRIPT_CONFIG="$(full_path "bridge-config.sh")"
 TOPICS_HEADER="$(full_path "../firmware/include/config/topic_routes.h")"
 CONFIG_HEADER="$(full_path "../firmware/include/config/config.h")"
+PROTOCOL_HEADER="$(full_path "../firmware/include/config/protocol.h")"
 export SCRIPT_CONFIG
 
 # 1. The bridge's settings and test helpers, with this project's config
@@ -41,27 +42,28 @@ REPLIES_TOPIC="$(topic_from_header "$TOPICS_HEADER" TOPIC_REPLIES)"
 COMMANDS_TOPIC="$(topic_from_header "$TOPICS_HEADER" TOPIC_COMMANDS)"
 READ_INTERVAL_MS="$(number_from_header "$CONFIG_HEADER" SENSOR_READ_INTERVAL_MS)"
 RATE_MAX_S="$(number_from_header "$CONFIG_HEADER" SENSOR_READ_INTERVAL_MAX_S)"
+COMMAND_HELP="$(number_from_header "$PROTOCOL_HEADER" PROTOCOL_COMMAND_HELP)"
+COMMAND_READ="$(number_from_header "$PROTOCOL_HEADER" PROTOCOL_COMMAND_READ)"
+COMMAND_RATE="$(number_from_header "$PROTOCOL_HEADER" PROTOCOL_COMMAND_RATE)"
+
+# The interval the rate check tries, in seconds: shorter than the one the firmware is built with
+SHORTER_RATE_S=2
 
 # 3. Readings: the sensor, the handshake and the way up
 # shellcheck disable=SC2153  # PROJECT_NAME and BROKER_PORT come from the bridge's settings
 report_run "test: readings arrive" check_reading_arrives "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$READINGS_TOPIC" 60
 
-# Checks 4 and 5 are switched off: the firmware does not act on commands at the moment (its
-# command handler is a placeholder). Switch them back on when the commands are handled again.
+# 4. Commands and their replies: the way down and back up. A command is sent as its number
+report_run "test: commands answered" check_commands_answered "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$COMMANDS_TOPIC" "$REPLIES_TOPIC" "$RATE_MAX_S" "$COMMAND_HELP" "$COMMAND_READ" "$COMMAND_RATE"
 
-# 4. Commands and their replies: the way down and back up
-# report_run "test: commands answered" check_commands_answered "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$COMMANDS_TOPIC" "$REPLIES_TOPIC" "$RATE_MAX_S"
+# 5. The rate command changes how often readings arrive: a shorter interval, then the built-in one
+report_run "test: rate changes the timing" check_rate_changes_timing "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$COMMANDS_TOPIC" "$REPLIES_TOPIC" "$READINGS_TOPIC" "$READ_INTERVAL_MS" "$COMMAND_RATE" "$SHORTER_RATE_S"
 
-# 5. The rate command changes how often readings arrive
-# report_run "test: rate changes the timing" check_rate_changes_timing "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$COMMANDS_TOPIC" "$REPLIES_TOPIC" "$READINGS_TOPIC" "$READ_INTERVAL_MS"
+# 6. Readings arrive at the interval the firmware is built with, each sent once. Coming after
+# check 5, it also shows the rate was put back
+report_run "test: reading interval and order" check_reading_interval "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$READINGS_TOPIC" "$READ_INTERVAL_MS"
 
-# 6. Each reading is sent once
-report_run "test: readings sent once" check_readings_sent_once "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$READINGS_TOPIC" "$READ_INTERVAL_MS"
-
-# 7. Readings arrive at the interval the firmware is built with
-report_run "test: reading interval" check_reading_interval "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$READINGS_TOPIC" "$READ_INTERVAL_MS"
-
-# 8. Readings are kept while the broker is stopped, and arrive in order once it is back.
+# 7. Readings are kept while the broker is stopped, and arrive in order once it is back.
 # This stops the broker in the VM for a while, and starts it again
 # shellcheck disable=SC2153  # MULTIPASS and VM_NAME come from the bridge's settings
 report_run "test: readings kept while broker stopped" check_readings_kept_while_broker_stopped "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$READINGS_TOPIC" "$READ_INTERVAL_MS" "$MULTIPASS" "$VM_NAME"

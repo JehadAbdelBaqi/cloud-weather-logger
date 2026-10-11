@@ -43,7 +43,7 @@ includes no code, so the bridge's build can read them as well as the Nucleo's.
 |------|-------|
 | `board_config.h` | How the board is wired: every pin assignment, and the baud rate and line limit of the link to the bridge |
 | `config.h` | Tunable values: the link's quiet limit, the margin the bridge answers within and the margin after which it counts the Nucleo as gone, the LED's blink times, how often the sensor is read, the limits a `rate` command may set and how many readings and replies the stores hold. These are choices, changed here at any time; the docs name them and do not repeat their values |
-| `protocol.h` | The letter of each line type, the field separator, the command words and the fixed words |
+| `protocol.h` | The letter of each line type, the field separator, the number of each command and the fixed words |
 | `topic_routes.h` | The MQTT topic for each line type that goes through the broker |
 | `bridge_config.h` | What is handed to the bridge's build |
 
@@ -80,7 +80,7 @@ hardware or timing in it, so all of it builds and is tested on the PC.
 | File | Job |
 |------|-----|
 | `messages.c` | The description of each type of message. The handshake's field is written in; a reading's fields are filled in each time one is sent |
-| `reading_to_message.c` | A stored reading as the reading message: the one place that knows both |
+| `reading_to_message.c` | A stored reading as the reading message: the one place that knows both. Also the one place a reading's values are listed, as text, for a reading message and for the reply to a `read` command |
 
 Every field is text by the time a message is built. A number is turned into
 text first, as a signed 32-bit value, so the time field cannot go past
@@ -95,8 +95,9 @@ text first, as a signed 32-bit value, so the time field cannot go past
 | `run_pass.c` | The function that is one pass of the main loop | Yes |
 | `message_handlers.c` | The handler for each kind of message, going out and coming in | Yes |
 | `outgoing.c` | Sends a message: builds it, sends it, and marks it as waiting for its answer | Yes |
-| `incoming.c` | The steps for a message that has arrived: read a response into its parts, set the state from a status, remove an answered reading | No, it builds on a PC as it stands |
-| `routing.c` | The tables: which function a letter or a state leads to | Yes |
+| `incoming.c` | The steps for a message that has arrived: read a response or a command into its parts, set the state from a status, remove an answered reading or reply | No, it builds on a PC as it stands |
+| `routing.c` | The tables: which function a letter, a state or a command's number leads to | Yes |
+| `commands.c` | The function for each command, and the one that runs a command from its number | Yes |
 | `poll_uart.c` | Polls the UART: routes a message that has arrived, or gives up on a wait | Yes |
 | `states.c` | One function for each state, and the function that runs the current one | Yes |
 | `status_led.c` | Blinks the LED to show the state | Yes |
@@ -128,7 +129,7 @@ run_pass(state, time)
 | State | What its function does | Entered when |
 |-------|------------------------|--------------|
 | No response | Sends the handshake | At start-up; when the quiet limit passes; when a response has a status other than `ok` |
-| Ok | Sends the oldest reading in the store, if there is one | A response has the status `ok` |
+| Ok | Sends the oldest reply in its store, if there is one; otherwise the oldest reading | A response has the status `ok` |
 
 **One message is out at a time, whatever its kind.** There is one awaiting
 flag, set when a message goes out and cleared when its response arrives. While
@@ -313,7 +314,6 @@ to treat one it already has as a repeat, not as a new reading.
 
 | Open point | Note |
 |------------|------|
-| Whether replies to commands go through the store | A reply that arrives long after its command is of little use, so probably not |
 | Telling a repeat from a new reading after a restart | `seq` starts again at every power-on, so the same number can be a different reading. The time on the reading tells them apart, once it is the real time |
 
 ## Sequence numbers
@@ -333,14 +333,32 @@ is renumbered when they are sent later.
 
 ## Commands
 
-`help`, `read`, `rate <s>` — arriving as `C` lines from the server, through the
+`help`, `read` and `rate` — arriving as `C` lines from the server, through the
 broker and the bridge, and each answered with an `R` line. Formats and replies
 in [protocol.md](protocol.md#c--r--commands-and-replies).
 
-- **The commands are a table** of a word and the function that carries it out.
-  A new command is one function and one row.
-- **`read` uses the same code as a timed reading**, so what it sends is a
-  normal `W` line with the next sequence number.
+```
+C,<id>,<number>,<value> arrives
+   │
+   ├─ read it into its ID, its number and its value
+   ├─ run it: the number is the position in the table of commands, and the
+   │  function there carries the command out and writes the result
+   └─ put the ID and the result in the reply store
+```
+
+- **A command is a number**, and the commands are a table in `routing.c` with
+  the function for each at that number's position. A new command is one
+  function, one row and one number in `protocol.h`.
+- **A reply waits in a store of its own** until it can be sent, because one
+  message is out at a time. In the ok state a waiting reply goes ahead of the
+  readings that are waiting: someone is waiting for it. It stays in the store
+  until the bridge answers `ok` for it.
+- **The reply is the answer itself.** There is no separate line to say a
+  command arrived. `help` replies with the list, `rate` with `ok`, and `read`
+  with the reading.
+- **`read` takes a fresh reading and sends it as the reply**, with the
+  command's ID in place of a sequence number. It is not put in the reading
+  store.
 - **`rate` changes the interval in memory**, within the limits in `config.h`.
   It is not kept across a restart.
 
@@ -359,16 +377,15 @@ in [protocol.md](protocol.md#c--r--commands-and-replies).
   | Check | Proves |
   |-------|--------|
   | A reading arrives on the readings topic within the time the test allows | The sensor is read, the handshake with the bridge is made, and a line gets all the way up |
-  | Over several readings in a row, the sequence numbers go up by one | Each reading is sent once: none twice, none missing |
-  | Two readings in a row arrive one reading interval apart | Readings are taken and sent at the interval the firmware is built with |
-  | The broker is stopped for a few reading intervals and started again; the readings taken meanwhile then arrive in order | Readings are held while they cannot be delivered, and none is lost or sent twice |
-  | `help`, `read` and an unknown command each get the reply expected | A command gets down to the Nucleo and its reply gets back up, with the same ID |
-  | `rate` with no value, and `rate 0`, are refused with their own replies | The checks on a command's value |
-  | After `rate` is given twice the built-in interval, two readings in a row arrive that far apart | The command really changes how often readings are taken |
+  | `help` gets the list of commands, `read` gets a reading, and a command with nothing after its ID or with an unknown number gets its own reply | A command gets down to the Nucleo and its reply gets back up, with the same ID |
+  | `rate` with no value, and with one above the limit, are refused with their own replies | The checks on a command's value |
+  | After `rate` is given a shorter interval, two readings in a row arrive that far apart; the built-in interval is then put back | The command really changes how often readings are taken |
+  | Two readings in a row arrive one reading interval apart, with sequence numbers that go up by one | Readings are taken and sent at the interval the firmware is built with, each one once; and the interval was put back |
+  | The broker is stopped for two reading intervals and started again; the readings taken meanwhile then arrive in order | Readings are held while they cannot be delivered, and none is lost or sent twice |
 
-  It ends by putting the built-in interval back. The test reads that interval,
+  Each command stops listening as soon as its reply arrives. The test reads the interval,
   and the limit of `rate`, from `config.h`, so it follows whatever is set
-  there. Each group of checks
+  there, and the number of each command from `protocol.h`. Each group of checks
   is a line in the report that `build.sh` prints when it ends: one line for
   each step that ran, on both boards, with `success`, `FAILED` or `not run`. The topics are read from
   `firmware/include/config/topic_routes.h`, and the checks themselves are the

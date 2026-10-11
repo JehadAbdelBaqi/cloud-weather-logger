@@ -55,7 +55,9 @@ What this project uses and how it is put together: the decisions made and still 
 - The first field of every line sent up is its sequence number or ID
 - The bridge answers a line with one line type, carrying that line's letter, its first field and the result
 - Every response to the Nucleo is that one line type, from the bridge or from the server; a command is the other kind of line it receives
-- A `read` command produces a normal reading line
+- A command is sent as a number, with its value as a field of its own
+- A reply is the answer itself; nothing is sent only to say a command arrived
+- A `read` command is answered with the reading, carrying the command's ID
 
 ## The Nucleo firmware
 
@@ -68,7 +70,7 @@ What this project uses and how it is put together: the decisions made and still 
 - Every pin assignment in `board_config.h`; the libraries are given their pins when they are set up
 - Tunable values in `config.h`
 - The protocol's line types and fixed words in `protocol.h`
-- The commands in a table of words and the functions that carry them out
+- The commands in a table, with the function for each at its number's position, beside the other route tables
 - The MQTT topics in `topic_routes.h`
 - A value is defined once; the bridge is handed its settings in `bridge_config.h`, filled from the project's own definitions
 - One set of link settings and timings for both boards
@@ -88,6 +90,7 @@ What this project uses and how it is put together: the decisions made and still 
 - A reading's sequence number and time are given when it is stored
 - The stores in `src/app/stores/`: one for readings and one for replies to commands, each built on the `ring` library
 - A reply to a command is put into its store and sent from there, staying until it is acknowledged
+- A waiting reply is sent ahead of the waiting readings
 - The bridge answers every line: an acknowledgement once the broker has it, or a report that it has not gone through
 - The bridge reports the state of its connection upstream
 - A line the bridge does not answer in time sends the Nucleo back to the handshake

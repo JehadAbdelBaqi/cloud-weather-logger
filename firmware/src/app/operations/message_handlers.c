@@ -4,10 +4,13 @@
 #include <stdint.h>
 
 #include "app_state.h"
+#include "commands.h"
 #include "incoming.h"
+#include "message_fields.h"
 #include "outgoing.h"
 #include "protocol.h"
 #include "reading_store.h"
+#include "reply_store.h"
 
 #include "messages.h"
 #include "reading_to_message.h"
@@ -82,46 +85,57 @@ void handle_handshake_ack(app_state_t *state, const char *text)
 }
 
 /**
- * @brief Handles a command coming in. A placeholder: whatever the command is, it sends the oldest
- * stored reading.
+ * @brief Handles a command coming in: reads it, runs it, and puts the reply in the reply store.
  *
- * Does nothing when the store is empty.
+ * A command with no ID, or one too long, is ignored: there is nothing to answer with.
  *
  * @param state The program's running state
- * @param text  The command received: not looked at yet
+ * @param text  The command received
  */
 void handle_incoming_command(app_state_t *state, const char *text)
 {
-    // TODO: placeholder. Read the command out of the text and act on it
-    (void)text;
+    command_t command;
+    char result[REPLY_RESULT_SIZE];
 
-    stored_reading_t stored;
-
-    if (!reading_store_oldest(&stored)) {
+    if (!read_command(text, &command)) {
         return;
     }
-    handle_reading(state, &stored);
+    run_command(state, command.command, command.value, result);
+    reply_store_put(command.id, result);
 }
 
 /**
- * @brief Handles a reply going out: the reply to a command. A placeholder: does nothing.
- */
-void handle_reply(void)
-{
-    // TODO: placeholder. Construct the reply message and send it
-    return;
-}
-
-/**
- * @brief Handles the response to a reply. A placeholder: does nothing.
+ * @brief Handles a reply going out: fills in the reply message from a stored reply and sends it.
  *
- * @param state The program's running state: not used yet
- * @param text  The response received: not looked at yet
+ * Sends nothing while an earlier message, of any kind, is still waiting for its answer.
+ *
+ * @param state  The program's running state
+ * @param stored The stored reply to send
+ */
+void handle_reply(app_state_t *state, const stored_reply_t *stored)
+{
+    const char *const values[] = { stored->id, stored->result };
+
+    fill_message(&reply_message, values);
+    send_outgoing_message(reply_message, &state->awaiting_ack, state->now_ms, &state->sent_ms);
+}
+
+/**
+ * @brief Handles the response to a reply: reads it, sets the state from its status and removes
+ * the reply from the store if the state is ok.
+ *
+ * A response that is missing a field is ignored.
+ *
+ * @param state The program's running state
+ * @param text  The response received
  */
 void handle_reply_ack(app_state_t *state, const char *text)
 {
-    // TODO: placeholder. Read the response and set the state from its status
-    (void)state;
-    (void)text;
-    return;
+    response_t response;
+
+    if (!read_response(text, &state->awaiting_ack, &response)) {
+        return;
+    }
+    handle_status(response.status, &state->current_state);
+    remove_reply_if_ok(response.first_field, state->current_state);
 }

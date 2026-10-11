@@ -22,10 +22,11 @@
 // Handshake: H,<word>
 #define PROTOCOL_HANDSHAKE_REQUEST "request"  // "are you there?"
 
-// Command: C,<id>,<command>, where the command is one of these words, with a value after "rate"
-#define PROTOCOL_COMMAND_HELP "help"  // lists the commands
-#define PROTOCOL_COMMAND_READ "read"  // takes a reading now
-#define PROTOCOL_COMMAND_RATE "rate"  // sets how often readings are taken: rate <seconds>
+// Command: C,<id>,<command> or C,<id>,<command>,<value>, where the command is one of these
+// numbers, sent as text, and the rate command has a value
+#define PROTOCOL_COMMAND_HELP 1  // lists the commands
+#define PROTOCOL_COMMAND_READ 2  // takes a reading now
+#define PROTOCOL_COMMAND_RATE 3  // sets how often readings are taken: its value is the seconds
 
 // Response: L,<letter>,<ID>,<status>, with the letter and first field of the line it is a
 // response to. The status is PROTOCOL_REPLY_OK (the broker has the line) or one of these. For the

@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 
+#include "commands.h"
 #include "config.h"
 #include "protocol.h"
 #include "message_handlers.h"
@@ -22,6 +23,15 @@ const incoming_handler_t response_routes[INCOMING_ROUTES_SIZE] = {
     [PROTOCOL_LETTER_READING]   = handle_weather_reading_ack,
     [PROTOCOL_LETTER_REPLY]     = handle_reply_ack,
 };
+
+// The table of commands: the function for each command sits at that command's number.
+static const command_handler_t command_routes[] = {
+    [PROTOCOL_COMMAND_HELP] = command_help,
+    [PROTOCOL_COMMAND_READ] = command_read,
+    [PROTOCOL_COMMAND_RATE] = command_rate,
+};
+
+#define COMMAND_ROUTES_SIZE (sizeof(command_routes) / sizeof(command_handler_t))
 
 // The table of states: the function for each state sits at that state's position.
 const route_handler_t state_routing[STATE_COUNT] = {
@@ -69,4 +79,28 @@ void response_router(app_state_t *state, const char *text)
         return;
     }
     call_route(response_routes, letter[0], state, text);
+}
+
+/**
+ * @brief Calls the function a command's number leads to in the table of commands, handing it the
+ *        program's running state and the command's value.
+ *
+ * A number with no function in the table calls nothing.
+ *
+ * @param command The command's number, which picks the route
+ * @param state   The program's running state, handed on to the function
+ * @param value   The value that came with the command, handed on to the function
+ * @param result  Filled in by the function with the result for the reply
+ * @return true if a function was called, false if the number has none
+ */
+bool call_command_route(uint32_t command, app_state_t *state, const char *value, char *result)
+{
+    if (command >= COMMAND_ROUTES_SIZE) {
+        return false;
+    }
+    if (command_routes[command] == NULL) {
+        return false;
+    }
+    command_routes[command](state, value, result);
+    return true;
 }
