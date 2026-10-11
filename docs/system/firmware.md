@@ -5,6 +5,9 @@ PlatformIO (`framework = stm32cube`).
 
 [← README](../../README.md)
 
+> **Built in `v0.1.0`:** everything on this page, apart from the real time on a
+> reading and the test in CI, which are marked as planned.
+
 ## Peripherals
 
 | Peripheral | Device | Use |
@@ -12,7 +15,7 @@ PlatformIO (`framework = stm32cube`).
 | USART1 (PA9 TX / PA10 RX) | Wi-Fi bridge | Protocol lines |
 | USART2 (via ST-LINK USB) | PC serial monitor | Debug output only |
 | I2C | BME280 | Temperature / pressure / humidity |
-| RTC on the LSE crystal | — | Timestamps |
+| RTC on the LSE crystal | — | Timestamps. *Planned, not built* |
 
 ## Code layout
 
@@ -58,7 +61,7 @@ includes no code, so the bridge's build can read them as well as the Nucleo's.
 | `UPLINK_ROUTES` | The letters in `protocol.h`, paired with the topics in `topic_routes.h` |
 | `DOWNLINK_TOPICS` | The topics in `topic_routes.h` |
 | The line ending, the answer's form and the text of each status | Set in `bridge_config.h`, from the separator and the words in `protocol.h` |
-| How long the bridge waits for the broker, and how long before it counts the Nucleo as quiet | Worked out in `bridge_config.h` from the timings in `config.h` |
+| How long the bridge waits for the broker, and how long before it counts the Nucleo as gone | Worked out in `bridge_config.h` from the timings in `config.h` |
 | `LOG_LINES` | Set in `bridge_config.h`; it is the bridge's own |
 
 - **Both boards are built from the same link settings and timings**, so the
@@ -153,8 +156,8 @@ second letter     H  ──► the handshake's response
 
 A letter with no route is ignored. Each response handler reads the response
 into its three parts, which clears the awaiting flag, and sets the state from
-the status. The reading's handler then
-removes that reading from the store if the state is ok.
+the status. The handler for a reading's response, and the one for a reply's,
+then removes that reading or reply from its store if the state is ok.
 
 **The quiet limit** is checked where the UART is polled. When it has passed
 since the last message was sent, the Nucleo goes to the no-response state and
@@ -332,16 +335,24 @@ is renumbered when they are sent later.
 
 ## Time
 
+**In `v0.1.0` the time on a reading is a stand-in:** a fixed starting time,
+`READING_TIME_START` in `config.h`, plus the seconds since the Nucleo was
+switched on. It counts up one second per second and starts again at every
+power-on. A reading is given its time when it is taken, so readings sent late
+or sent again keep their order and their spacing.
+
+*Planned, not built:*
+
 - Readings are timestamped on the Nucleo by its RTC, driven by the on-board
   32.768 kHz LSE crystal (X2 on the MB1136 C-04 board).
-- The bridge sends the real time down the UART (`T` line) on connect and hourly.
-- No readings are taken after a power-up until the first `T` has set the clock.
-- Readings sent again from the store carry their original sample time.
+- The real time is sent down to the Nucleo to set that clock.
+- No readings are taken after a power-up until the clock has been set.
 
 ## Commands
 
-`help`, `read` and `rate` — arriving as `C` lines from the server, through the
-broker and the bridge, and each answered with an `R` line. Formats and replies
+`help`, `read` and `rate` — arriving as `C` lines through the broker and the
+bridge, and each answered with an `R` line. In `v0.1.0` they are published to
+the broker by hand or by the tests; the server that will send them is planned. Formats and replies
 in [protocol.md](protocol.md#c--r--commands-and-replies).
 
 ```
@@ -378,7 +389,7 @@ C,<id>,<number>,<value> arrives
   uploaded. See
   [firmware/test/README.md](../../firmware/test/README.md).
 - **A test of the running boards, through the broker** — `scripts/steps/test-nucleo.sh`,
-  the last step of `scripts/build.sh`. With both boards running and the broker
+  a step of `scripts/build.sh`, after both boards are uploaded. With both boards running and the broker
   reachable it checks, in order:
 
   | Check | Proves |
@@ -395,8 +406,8 @@ C,<id>,<number>,<value> arrives
   there, and the number of each command from `protocol.h`. Each group of checks
   is a line in the report that `build.sh` prints when it ends: one line for
   each step that ran, on both boards, with `success`, `FAILED` or `not run`. The topics are read from
-  `firmware/include/config/topic_routes.h`, and the checks themselves are the
-  bridge's own test helpers, used with this project's topics.
+  `firmware/include/config/topic_routes.h`. The first check uses the bridge's
+  own test helper; the others are this project's.
 - **A test of the connection between the two boards** — `scripts/steps/test-connections.sh`,
   a step of `scripts/build.sh` after the one above. No wire is touched:
 
@@ -408,7 +419,7 @@ C,<id>,<number>,<value> arrives
   The bridge's limit is worked out from `config.h`, as `bridge_config.h` works
   it out. The bridge's log is read from its USB serial port, found by its name
   under `/dev/serial/by-id`, so both boards have to be plugged into the PC.
-- **Hardware-in-the-loop test in CI** — see [deployment.md](deployment.md).
+- **Hardware-in-the-loop test in CI** — *planned, not built*; see [deployment.md](deployment.md).
 
 ## See also
 

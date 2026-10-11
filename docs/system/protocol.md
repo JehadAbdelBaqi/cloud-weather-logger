@@ -7,17 +7,17 @@ The bridge routes each line by its first letter.
 
 ## Line types
 
-| Line | Direction | Meaning |
-|------|-----------|---------|
-| `W,<seq>,<epoch>,<t_centi_C>,<p_Pa>,<rh_centi_pct>` | up | A reading |
-| `R,<id>,<result>` | up | Reply to a command |
-| `A,<seq>` | down | Acknowledgement from the server: the reading is stored |
-| `L,<letter>,<first field>,<status>` | down | A response to a line the Nucleo sent up |
-| `T,<epoch>` | down | Set the time |
-| `C,<id>,<command>,<value>` | down | A command |
-| `H,request` | up | Handshake: "are you there?" |
+| Line | Direction | Meaning | In `v0.1.0` |
+|------|-----------|---------|-------------|
+| `W,<seq>,<epoch>,<t_centi_C>,<p_Pa>,<rh_centi_pct>` | up | A reading | Built |
+| `R,<id>,<result>` | up | Reply to a command | Built |
+| `L,<letter>,<first field>,<status>` | down | A response to a line the Nucleo sent up | Built, for the bridge's responses |
+| `C,<id>,<command>,<value>` | down | A command | Built |
+| `H,request` | up | Handshake: "are you there?" | Built |
+| `A,<seq>` | down | Acknowledgement from the server: the reading is stored | Planned |
+| `T,<epoch>` | down | Set the time | Planned |
 
-Up = Nucleo → server. Down = server → Nucleo. The `H` line goes no further than
+Up = Nucleo → broker, and on to the server once there is one. Down = broker → Nucleo. The `H` line goes no further than
 the bridge: it is answered by the bridge itself. The bridge's responses are
 written by the bridge too, so neither has a topic.
 
@@ -36,8 +36,8 @@ W,1042,1790812800,2140,101325,4550
         → seq 1042, 21.40 °C, 101325 Pa, 45.50 %
 ```
 
-All fields are integers. Ingest converts them to decimals before writing to
-InfluxDB.
+All fields are integers. Whatever takes the readings in converts them to
+decimals: the ingest service, once the server is built.
 
 ## `L` — response
 
@@ -70,9 +70,9 @@ Nucleo ◄── L,W,42,ok ─ bridge
 | `con_err_w` | The bridge has no Wi-Fi. The line was not published |
 | `con_err_br` | The bridge has Wi-Fi, but no connection to the broker. The line was not published |
 | `err_br` | The line was published, but the broker did not confirm it in time |
-| `ans_err_long` | The line was too long for the bridge to answer in full: the first field is left empty |
+| `ans_err_long` | Set aside for a line too long for the bridge to answer in full. The bridge does not send it yet |
 
-- **One response for one line.** The Nucleo sends its next line of that kind
+- **One response for one line.** The Nucleo sends its next line, of any kind,
   only once it has the response to the one before.
 - **`ok` on a reading removes it from the Nucleo's store.** With any other
   status the reading stays there, and the Nucleo sends the handshake until the
@@ -89,9 +89,10 @@ Nucleo ◄── L,W,42,ok ─ bridge
 
 ## `A` — acknowledgement
 
-Comes with the server stack. Until then the bridge's response, above, is the
-one the Nucleo acts on.
-
+> **Planned, not built.** It comes with the server. Until then the bridge's
+> response, above, is the one the Nucleo acts on. The form below is the first
+> design: it is to become a response of the `L` kind, `L,A`, like every other
+> response the Nucleo receives, and its exact form is not decided.
 
 `A,<seq>` means every reading **up to and including** `seq` is stored in
 InfluxDB.
@@ -102,6 +103,11 @@ InfluxDB.
 - Sent only after the database write succeeds.
 
 ## `T` — time
+
+> **Planned, not built.** In `v0.1.0` the time on a reading is a stand-in (see
+> [`W`](#w--reading)). The form below is the first design: it is to become a
+> response of the `L` kind, `L,T`, and where the time comes from is not
+> decided.
 
 `T,<epoch>` sets the Nucleo's RTC (Unix time in seconds).
 
@@ -159,8 +165,8 @@ When a command cannot be carried out:
 - **Every time here is a value in `firmware/include/config/config.h`**, not
   part of the protocol: the interval the firmware is built with and the two
   limits of `rate`. They are changed there.
-- **A reply is only sent while the connection to the bridge is made**, like a
-  reading.
+- **A reply is only sent in the Nucleo's ok state**, like a reading, and ahead
+  of the readings waiting to go.
 
 ## `H` — handshake
 
@@ -177,7 +183,7 @@ L,H,request,<status>       the bridge: "I am here", and whether it has Wi-Fi and
   any line from the Nucleo shows that the Nucleo is there.
 - **The answer is a response like any other** (see [`L`](#l--response)), and
   its status is `ok`, `con_err_w` or `con_err_br`.
-- **`ok` puts the Nucleo in its ok state**, in which it sends its readings.
+- **`ok` puts the Nucleo in its ok state**, in which it sends its replies and its readings.
   With any other status, or with no answer, it stays in its no-response state
   and sends nothing but the handshake.
 - **When the Nucleo asks:** when it starts, and whenever the quiet limit has
@@ -242,9 +248,9 @@ line as-is, without the terminator. The topics are defined in
 |------|-----------|-------|
 | `W` | up | `weather/nucleo-01/readings` |
 | `R` | up | `weather/nucleo-01/replies` |
-| `A` | down | `weather/nucleo-01/acks` |
+| `A` | down | `weather/nucleo-01/acks` (planned: nothing publishes to it yet) |
 | `C` | down | `weather/nucleo-01/commands` |
-| `T` | down | none — generated by the bridge itself |
+| `T` | down | planned |
 | `H` | up | none — answered by the bridge itself |
 | `L` | down | none — written by the bridge itself |
 

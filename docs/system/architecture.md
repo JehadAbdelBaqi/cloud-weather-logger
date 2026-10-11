@@ -5,28 +5,38 @@ cloud environments differ.
 
 [← README](../../README.md)
 
+> **Built in `v0.1.0`:** the Nucleo, the bridge and everything between the
+> Nucleo and the broker. **Planned, not built:** everything past the broker
+> (ingest, InfluxDB, Grafana), the server it runs on, and the cloud. Each
+> planned part below is marked.
+
 ## Data flow
 
 ```
- UP    Nucleo ─UART─► bridge ─MQTT─► broker ─► ingest ─► InfluxDB ─► Grafana
-       readings (W), command replies (R)
-
- DOWN  Nucleo ◄─UART─ bridge ◄─MQTT─ broker ◄─ ingest / any container
-       acks (A), time (T), commands (C)
-
-       Nucleo ◄─UART─ bridge
-       the bridge's own lines: "the broker has it", and the state of its
-       connection upstream
+                    built in v0.1.0                  │       planned
+                                                     │
+ UP    Nucleo ─UART─► bridge ─MQTT─► broker ─────────┼─► ingest ─► InfluxDB ─► Grafana
+       readings (W), command replies (R)             │
+                                                     │
+ DOWN  Nucleo ◄─UART─ bridge ◄─MQTT─ broker ◄────────┼── ingest / any container
+       commands (C)                                  │   the server's own responses:
+                                                     │   stored in the database, the time
+       Nucleo ◄─UART─ bridge                         │
+       the bridge's own lines: "the broker has it",  │
+       and the state of its connection upstream      │
 ```
 
-- **Readings travel over MQTT through a broker.** The ingest service connects
-  out to the broker as its own client with its own certificate; the server has
-  no inbound port for data.
-- **The bridge is two-way.** Readings go up; commands, acknowledgements and the
-  time come down the same path.
+Until the server exists, the broker is a test broker on the PC, and commands
+are sent to it by hand or by the tests.
+
+- **Readings travel over MQTT through a broker.** *Planned:* the ingest
+  service connects out to the broker as its own client with its own
+  certificate; the server has no inbound port for data.
+- **The bridge is two-way.** Readings go up and commands come down the same
+  path. *Planned:* the server's responses and the time come down it too.
 - **A reading is acknowledged in two stages.** The bridge tells the Nucleo when
-  the broker has it, which is what lets the Nucleo let go of it. The server
-  acknowledges separately once it is stored in the database.
+  the broker has it, which is what lets the Nucleo let go of it. *Planned:* the
+  server acknowledges separately once it is stored in the database.
 - **The Nucleo speaks plain text lines over UART** (see
   [protocol.md](protocol.md)). Wi-Fi, TLS and MQTT live in the bridge.
 
@@ -39,15 +49,18 @@ its UART lines to and from MQTT over Wi-Fi/TLS.
   at changes.
 - **It runs the `uart-mqtt-bridge` firmware**, a separate general-purpose
   project in its own repository. This repository holds only the bridge's
-  config (the routing table) and secrets headers, and names the bridge version
-  it was tested with.
-- **It routes each line by its first letter** and never changes a line. It
-  also sends the time down to the Nucleo, which it gets from NTP.
+  config, and names the bridge version it is built with: `v0.2.0`. The
+  certificates are made by the bridge's own scripts.
+- **It routes each line by its first letter** and never changes a line, and it
+  answers every line the Nucleo sends with what became of it.
+- *Planned:* the time reaches the Nucleo through the bridge.
 - The Nucleo never drives Wi-Fi, MQTT or certificates itself.
 - The bridge and the Nucleo act as **one device**: the bridge holds no health
   logic of its own.
 
 ## Server stack
+
+*Planned, not built.*
 
 ```
  broker ─► ingest ─► InfluxDB ─► Grafana
@@ -56,6 +69,9 @@ its UART lines to and from MQTT over Wi-Fi/TLS.
 Three containers in Docker Compose. Details in [server.md](server.md).
 
 ## Local vs cloud
+
+*Planned, not built, apart from the link: the Wi-Fi bridge is the link today,
+to a test broker on the PC.*
 
 | Piece | Local VM | EC2 |
 |-------|----------|-----|
