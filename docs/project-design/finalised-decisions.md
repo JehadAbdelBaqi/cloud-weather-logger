@@ -86,6 +86,8 @@ What this project uses and how it is put together: the decisions made and still 
 - Readings are put into a store in memory and sent from there, one at a time, each staying until it is acknowledged
 - One message is out at a time, whatever its kind: the next is sent once the one before is answered
 - A reading's sequence number and time are given when it is stored
+- The stores in `src/app/stores/`: one for readings and one for replies to commands, each built on the `ring` library
+- A reply to a command is put into its store and sent from there, staying until it is acknowledged
 - The bridge answers every line: an acknowledgement once the broker has it, or a report that it has not gone through
 - The bridge reports the state of its connection upstream
 - A line the bridge does not answer in time sends the Nucleo back to the handshake

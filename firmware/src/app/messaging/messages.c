@@ -15,3 +15,10 @@ message_t reading_message = {
     .letter = PROTOCOL_LETTER_READING,
     .number_of_fields = PROTOCOL_FIELDS_READING,
 };
+
+// The reply message: R,<id>,<result>.
+// The fields are empty here: they are filled in, as text, for each reply that is sent
+message_t reply_message = {
+    .letter = PROTOCOL_LETTER_REPLY,
+    .number_of_fields = PROTOCOL_FIELDS_REPLY,
+};

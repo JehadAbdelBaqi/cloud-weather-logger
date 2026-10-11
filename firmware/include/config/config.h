@@ -29,6 +29,9 @@
 // How many readings the store in memory holds while they wait to be acknowledged
 #define READING_STORE_CAPACITY 2500
 
+// How many replies to commands the store in memory holds while they wait to be sent and acknowledged
+#define REPLY_STORE_CAPACITY 8
+
 // Stand-in for the time of a reading until the RTC is set up: the time starts here at every
 // power-on and counts up. Unix time in seconds: 5 October 2026, 00:00 UK time
 #define READING_TIME_START 1791154800u

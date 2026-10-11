@@ -4,6 +4,7 @@
 
 #include "format_number.h"
 #include "message_build.h"
+#include "message_fields.h"
 #include "messages.h"
 #include "protocol.h"
 #include "reading_store.h"
@@ -49,6 +50,18 @@ static void test_a_stored_reading_becomes_the_reading_message(void)
     TEST_ASSERT_EQUAL_STRING("W,1042,1790812800,-512,101325,4550", text);
 }
 
+/** The reply message is constructed as its letter, the command's ID and the result. */
+static void test_construct_a_reply(void)
+{
+    char text[TEXT_SIZE];
+    const char *const values[] = { "7", PROTOCOL_REPLY_OK };
+
+    fill_message(&reply_message, values);
+    construct_message(text, PROTOCOL_FIELD_SEPARATOR, reply_message);
+
+    TEST_ASSERT_EQUAL_STRING("R,7,ok", text);
+}
+
 /** Runs every test in this file. */
 int main(void)
 {
@@ -57,6 +70,8 @@ int main(void)
     RUN_TEST(test_construct_the_handshake);
 
     RUN_TEST(test_a_stored_reading_becomes_the_reading_message);
+
+    RUN_TEST(test_construct_a_reply);
 
     return UNITY_END();
 }

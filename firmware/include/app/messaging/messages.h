@@ -12,4 +12,8 @@ extern const message_t handshake_message;
 // Its fields are empty: they are filled in, as text, for each reading that is sent
 extern message_t reading_message;
 
+// The reply message: R,<id>,<result>.
+// Its fields are empty: they are filled in, as text, for each reply that is sent
+extern message_t reply_message;
+
 #endif

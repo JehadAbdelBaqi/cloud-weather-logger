@@ -22,6 +22,7 @@ firmware/
   src/app/       the application: what this program does with the libraries
   src/app/messaging/   this project's messages
   src/app/operations/  what is sent and when, and what is done with what arrives
+  src/app/stores/      what is held in memory until it is sent and acknowledged
   include/config/      the project's values: no code behind them
   include/app/         the headers of the files in src/app/
   lib/           the libraries, one folder per module
@@ -41,7 +42,7 @@ includes no code, so the bridge's build can read them as well as the Nucleo's.
 | File | Holds |
 |------|-------|
 | `board_config.h` | How the board is wired: every pin assignment, and the baud rate and line limit of the link to the bridge |
-| `config.h` | Tunable values: the link's quiet limit, the margin the bridge answers within and the margin after which it counts the Nucleo as gone, the LED's blink times, how often the sensor is read, the limits a `rate` command may set and how many readings the store holds. These are choices, changed here at any time; the docs name them and do not repeat their values |
+| `config.h` | Tunable values: the link's quiet limit, the margin the bridge answers within and the margin after which it counts the Nucleo as gone, the LED's blink times, how often the sensor is read, the limits a `rate` command may set and how many readings and replies the stores hold. These are choices, changed here at any time; the docs name them and do not repeat their values |
 | `protocol.h` | The letter of each line type, the field separator, the command words and the fixed words |
 | `topic_routes.h` | The MQTT topic for each line type that goes through the broker |
 | `bridge_config.h` | What is handed to the bridge's build |
@@ -177,6 +178,7 @@ same letters (see [Config](#config)).
 | `debug/` | Text to the PC's serial monitor, over a UART |
 | `format/` | Numbers to text, and text to a number |
 | `message/` | A message as text: building one from its letter and fields, and getting a field out of one |
+| `ring/` | The places of a ring: which place of an array holds the oldest item and which is free |
 | `time/` | Whether an interval has passed |
 
 ### File names in `lib/`
@@ -208,6 +210,7 @@ lib/
   format/   format_number.c         a number to decimal or hexadecimal text, and decimal text to a number
   message/  message_build.c         a message as text, from its letter and fields
             message_fields.c        filling a message's fields in, and getting a field out of a message
+  ring/     ring_places.c           which place of an array holds the oldest item, and which is free
   time/     time_interval.c         whether an interval has passed since an earlier moment
 ```
 
