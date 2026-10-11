@@ -61,7 +61,7 @@ includes no code, so the bridge's build can read them as well as the Nucleo's.
 | `UPLINK_ROUTES` | The letters in `protocol.h`, paired with the topics in `topic_routes.h` |
 | `DOWNLINK_TOPICS` | The topics in `topic_routes.h` |
 | The line ending, the answer's form and the text of each status | Set in `bridge_config.h`, from the separator and the words in `protocol.h` |
-| How long the bridge waits for the broker, and how long before it counts the Nucleo as quiet | Worked out in `bridge_config.h` from the timings in `config.h` |
+| How long the bridge waits for the broker, and how long before it counts the Nucleo as gone | Worked out in `bridge_config.h` from the timings in `config.h` |
 | `LOG_LINES` | Set in `bridge_config.h`; it is the bridge's own |
 
 - **Both boards are built from the same link settings and timings**, so the
@@ -156,8 +156,8 @@ second letter     H  ──► the handshake's response
 
 A letter with no route is ignored. Each response handler reads the response
 into its three parts, which clears the awaiting flag, and sets the state from
-the status. The reading's handler then
-removes that reading from the store if the state is ok.
+the status. The handler for a reading's response, and the one for a reply's,
+then removes that reading or reply from its store if the state is ok.
 
 **The quiet limit** is checked where the UART is polled. When it has passed
 since the last message was sent, the Nucleo goes to the no-response state and
@@ -389,7 +389,7 @@ C,<id>,<number>,<value> arrives
   uploaded. See
   [firmware/test/README.md](../../firmware/test/README.md).
 - **A test of the running boards, through the broker** — `scripts/steps/test-nucleo.sh`,
-  the last step of `scripts/build.sh`. With both boards running and the broker
+  a step of `scripts/build.sh`, after both boards are uploaded. With both boards running and the broker
   reachable it checks, in order:
 
   | Check | Proves |
@@ -406,8 +406,8 @@ C,<id>,<number>,<value> arrives
   there, and the number of each command from `protocol.h`. Each group of checks
   is a line in the report that `build.sh` prints when it ends: one line for
   each step that ran, on both boards, with `success`, `FAILED` or `not run`. The topics are read from
-  `firmware/include/config/topic_routes.h`, and the checks themselves are the
-  bridge's own test helpers, used with this project's topics.
+  `firmware/include/config/topic_routes.h`. The first check uses the bridge's
+  own test helper; the others are this project's.
 - **A test of the connection between the two boards** — `scripts/steps/test-connections.sh`,
   a step of `scripts/build.sh` after the one above. No wire is touched:
 

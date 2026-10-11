@@ -70,9 +70,9 @@ Nucleo ◄── L,W,42,ok ─ bridge
 | `con_err_w` | The bridge has no Wi-Fi. The line was not published |
 | `con_err_br` | The bridge has Wi-Fi, but no connection to the broker. The line was not published |
 | `err_br` | The line was published, but the broker did not confirm it in time |
-| `ans_err_long` | The line was too long for the bridge to answer in full: the first field is left empty |
+| `ans_err_long` | Set aside for a line too long for the bridge to answer in full. The bridge does not send it yet |
 
-- **One response for one line.** The Nucleo sends its next line of that kind
+- **One response for one line.** The Nucleo sends its next line, of any kind,
   only once it has the response to the one before.
 - **`ok` on a reading removes it from the Nucleo's store.** With any other
   status the reading stays there, and the Nucleo sends the handshake until the
@@ -165,8 +165,8 @@ When a command cannot be carried out:
 - **Every time here is a value in `firmware/include/config/config.h`**, not
   part of the protocol: the interval the firmware is built with and the two
   limits of `rate`. They are changed there.
-- **A reply is only sent while the connection to the bridge is made**, like a
-  reading.
+- **A reply is only sent in the Nucleo's ok state**, like a reading, and ahead
+  of the readings waiting to go.
 
 ## `H` — handshake
 
@@ -183,7 +183,7 @@ L,H,request,<status>       the bridge: "I am here", and whether it has Wi-Fi and
   any line from the Nucleo shows that the Nucleo is there.
 - **The answer is a response like any other** (see [`L`](#l--response)), and
   its status is `ok`, `con_err_w` or `con_err_br`.
-- **`ok` puts the Nucleo in its ok state**, in which it sends its readings.
+- **`ok` puts the Nucleo in its ok state**, in which it sends its replies and its readings.
   With any other status, or with no answer, it stays in its no-response state
   and sends nothing but the handshake.
 - **When the Nucleo asks:** when it starts, and whenever the quiet limit has
