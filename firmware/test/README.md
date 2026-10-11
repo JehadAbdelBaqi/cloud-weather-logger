@@ -31,13 +31,17 @@ folder named after its library, or `app/` for the application.
 
 ```
 test/
-  app/      test_line/                 building a protocol line, finding and copying its fields,
-                                       checking a word, reading a number
+  app/      test_message/              constructing a message from its letter and fields, filling
+                                       its fields in, a stored reading as the reading message
+            test_incoming/             getting a field out of a message, reading a response, setting
+                                       the state from a status, removing an answered reading
   bme280/   test_bme280_raw/           measurement bytes to raw values
             test_bme280_calibration/   calibration bytes to calibration values
             test_bme280_compensation/  raw values to real units
-  format/   test_format_number/        a number to decimal or hexadecimal text
+  format/   test_format_number/        a number to decimal or hexadecimal text, and decimal text to
+                                       a number
   link/     test_link_framing/         received bytes to a line
+            test_link_buffer/          holding received bytes until they are read
   time/     test_time_interval/        whether an interval has passed
 ```
 
@@ -47,7 +51,7 @@ test/
 |------|-----|
 | Drivers (`<module>_driver.c`) | They operate a device, so they only run on the board |
 | `link.c`, `debug.c` | They sit on a driver |
-| The rest of the application (`src/`) | It calls the HAL, the link and the debug output directly |
+| The rest of the application (`src/`) | It calls the HAL, the link, the sensor and the LED directly |
 
 ## How it works
 

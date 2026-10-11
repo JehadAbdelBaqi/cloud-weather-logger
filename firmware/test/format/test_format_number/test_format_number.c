@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <unity.h>
@@ -144,6 +145,75 @@ static void test_hex_byte_largest(void)
     TEST_ASSERT_EQUAL_STRING("0xFF", text);
 }
 
+/** Text that is digits is read as that number. */
+static void test_read_number_digits(void)
+{
+    uint32_t value = 0;
+
+    TEST_ASSERT_TRUE(format_read_number("0", &value));
+    TEST_ASSERT_EQUAL_UINT32(0, value);
+    TEST_ASSERT_TRUE(format_read_number("102137", &value));
+    TEST_ASSERT_EQUAL_UINT32(102137, value);
+}
+
+/** Zeros in front do not change the number. */
+static void test_read_number_leading_zeros(void)
+{
+    uint32_t value = 0;
+
+    TEST_ASSERT_TRUE(format_read_number("0010", &value));
+    TEST_ASSERT_EQUAL_UINT32(10, value);
+}
+
+/** The largest number that fits in 32 bits is read. */
+static void test_read_number_largest(void)
+{
+    uint32_t value = 0;
+
+    TEST_ASSERT_TRUE(format_read_number("4294967295", &value));
+    TEST_ASSERT_EQUAL_UINT32(UINT32_MAX, value);
+}
+
+/** A number too large for 32 bits is not read. */
+static void test_read_number_too_large(void)
+{
+    uint32_t value = 0;
+
+    TEST_ASSERT_FALSE(format_read_number("4294967296", &value));
+    TEST_ASSERT_FALSE(format_read_number("99999999999999999999999", &value));
+}
+
+/** Empty text is not a number. */
+static void test_read_number_empty(void)
+{
+    uint32_t value = 0;
+
+    TEST_ASSERT_FALSE(format_read_number("", &value));
+}
+
+/** Text with anything other than digits in it is not a number. */
+static void test_read_number_not_digits(void)
+{
+    uint32_t value = 0;
+
+    TEST_ASSERT_FALSE(format_read_number("ten", &value));
+    TEST_ASSERT_FALSE(format_read_number("10s", &value));
+    TEST_ASSERT_FALSE(format_read_number("-5", &value));
+    TEST_ASSERT_FALSE(format_read_number("1.5", &value));
+    TEST_ASSERT_FALSE(format_read_number(" 10", &value));
+    TEST_ASSERT_FALSE(format_read_number("10 ", &value));
+}
+
+/** The value is left as it was when the text is not a number. */
+static void test_read_number_leaves_the_value_when_not_a_number(void)
+{
+    uint32_t value = 77;
+
+    format_read_number("abc", &value);
+
+    TEST_ASSERT_EQUAL_UINT32(77, value);
+}
+
 /** Runs every test in this file. */
 int main(void)
 {
@@ -164,6 +234,14 @@ int main(void)
     RUN_TEST(test_hex_byte_zero);
     RUN_TEST(test_hex_byte_letters);
     RUN_TEST(test_hex_byte_largest);
+
+    RUN_TEST(test_read_number_digits);
+    RUN_TEST(test_read_number_leading_zeros);
+    RUN_TEST(test_read_number_largest);
+    RUN_TEST(test_read_number_too_large);
+    RUN_TEST(test_read_number_empty);
+    RUN_TEST(test_read_number_not_digits);
+    RUN_TEST(test_read_number_leaves_the_value_when_not_a_number);
 
     return UNITY_END();
 }

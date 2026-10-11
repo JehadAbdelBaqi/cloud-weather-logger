@@ -41,15 +41,26 @@ bool uart_init(uart_t *uart, const uart_config_t *config);
 bool uart_write(uart_t *uart, const uint8_t *data, size_t length);
 
 /**
- * @brief Takes one received byte, if one is waiting. Does not wait.
+ * @brief Switches on the UART's receive interrupt: its interrupt function runs each time a byte
+ * arrives.
  *
- * The UART holds only one received byte at a time, so call this often: a byte not taken
- * before the next one arrives is lost.
+ * The interrupt function, named after the UART (e.g. USART1_IRQHandler), has to exist and has to
+ * take the byte with uart_take_received_byte().
+ *
+ * @param uart A UART set up with uart_init()
+ * @return true if the interrupt was switched on, false if the UART is not one this driver knows
+ */
+bool uart_enable_receive_interrupt(uart_t *uart);
+
+/**
+ * @brief Takes the byte that has just arrived. Call it from the UART's interrupt function.
+ *
+ * Taking the byte also clears what raised the interrupt.
  *
  * @param uart A UART set up with uart_init()
  * @param byte Filled in with the byte, when there is one
- * @return true if a byte was taken, false if none was waiting
+ * @return true if a byte was taken, false if the interrupt was raised with no byte to take
  */
-bool uart_read_byte(uart_t *uart, uint8_t *byte);
+bool uart_take_received_byte(uart_t *uart, uint8_t *byte);
 
 #endif

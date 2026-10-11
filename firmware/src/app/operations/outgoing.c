@@ -5,7 +5,7 @@
 
 #include "link.h"
 
-#include "../messaging_two/message.h"
+#include "message.h"
 
 /**
  * @brief Sends a message going out: constructs it and sends it.

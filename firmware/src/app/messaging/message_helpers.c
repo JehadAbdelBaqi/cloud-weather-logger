@@ -1,51 +1,54 @@
 #include "message_helpers.h"
 
-#include "stm32f4xx_hal.h"
-
-#include "bridge_connection.h"
-#include "config.h"
-#include "line.h"
-#include "link.h"
-#include "protocol.h"
-
-void send_word(char letter, const char *word)
+/**
+ * @brief Fills in a message's fields with the values given, in order.
+ *
+ * The message says how many fields it has, and the list has to hold that many values.
+ *
+ * @param message The message to fill in
+ * @param values  The values, as text, in the order of the message's fields
+ */
+void fill_message(message_t *message, const char *const values[])
 {
-    char line[LINE_BUFFER_SIZE];
-
-    line_start(line, letter);
-    line_add_field(line, word);
-    link_send_line(line);
-}
-
-bool send_reply(const char *id, const char *result)
-{
-    char line[LINE_BUFFER_SIZE];
-
-    if (!bridge_connection_is_connected()) {
-        return false;
+    for (size_t i = 0; i < message->number_of_fields; i++) {
+        message->fields.text[i] = values[i];
     }
-
-    line_start(line, PROTOCOL_LETTER_REPLY);
-    line_add_field(line, id);
-    line_add_field(line, result);
-    return link_send_line(line);
 }
 
-bool send_reading(const stored_reading_t *stored)
+/**
+ * @brief Turns a list of numbers into text, one text for each number, in the same order.
+ *
+ * @param numbers The numbers, which may be negative
+ * @param count   How many numbers are in the list
+ * @param texts   Filled in with the texts: one buffer of FORMAT_SIGNED_SIZE characters for
+ *                each number
+ */
+void numbers_to_text(const int32_t numbers[], size_t count, char texts[][FORMAT_SIGNED_SIZE])
 {
-    char line[LINE_BUFFER_SIZE];
-
-    line_start(line, PROTOCOL_LETTER_READING);
-    line_add_number(line, stored->seq);
-    line_add_number(line, stored->time);
-    line_add_signed(line, stored->reading.temperature);
-    line_add_number(line, stored->reading.pressure);
-    line_add_number(line, stored->reading.humidity);
-
-    return link_send_line(line);
+    for (size_t i = 0; i < count; i++) {
+        format_signed(numbers[i], texts[i]);
+    }
 }
 
-uint32_t reading_time(void)
+/**
+ * @brief Fills in a message whose fields are all numbers: turns each number into text, then
+ *        puts the texts into the message's fields.
+ *
+ * The message says how many fields it has, and the list has to hold that many numbers.
+ *
+ * @param message The message to fill in: the caller's own, e.g. its copy of reading_message
+ * @param numbers The numbers, in the order of the message's fields
+ * @param texts   Buffers for the texts, one of FORMAT_SIGNED_SIZE characters for each number.
+ *                The message's fields point into them, so they have to last as long as the
+ *                message is used
+ */
+void fill_message_fields_from_numbers(message_t *message, const int32_t numbers[], char texts[][FORMAT_SIGNED_SIZE])
 {
-    return READING_TIME_START + HAL_GetTick() / 1000;
+    const char *values[MESSAGE_MAX_FIELDS];
+
+    numbers_to_text(numbers, message->number_of_fields, texts);
+    for (size_t i = 0; i < message->number_of_fields; i++) {
+        values[i] = texts[i];
+    }
+    fill_message(message, values);
 }

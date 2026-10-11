@@ -5,7 +5,7 @@
 
 // Handshake with the bridge ("H,request" / "H,ack")
 #define HANDSHAKE_REQUEST_INTERVAL_MS 2000  // how often the request is repeated while it goes unanswered
-#define HANDSHAKE_QUIET_LIMIT_MS      3000  // once connected: how long with no line from the bridge before asking
+#define HANDSHAKE_QUIET_LIMIT_MS      6000  // once connected: how long with no line from the bridge before asking
 #define HANDSHAKE_MISSED_LIMIT        5     // unanswered requests in a row before the connection counts as lost
 
 // How much sooner than the quiet limit the bridge answers a line ("L"), so that its answer always

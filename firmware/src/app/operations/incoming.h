@@ -4,8 +4,9 @@
 // The handlers for messages coming in. Described in incoming.c
 
 #include <stdbool.h>
+#include <stddef.h>
 
-#include "link.h"
+#include "link_framing.h"
 #include "routing.h"
 
 // A response that has been read: its three fields, each as text
@@ -17,7 +18,7 @@ typedef struct {
 
 void handle_status(const char *status, state_key_t *current_state);
 bool read_response(const char *text, bool *awaiting_ack, response_t *response);
-void response_router(const char *text);
+bool get_field(const char *text, size_t index, char *field, size_t size);
 void remove_reading_if_ok(const char *seq_text, state_key_t current_state);
 
 #endif

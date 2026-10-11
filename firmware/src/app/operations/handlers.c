@@ -5,15 +5,17 @@
 
 #include "config.h"
 #include "incoming.h"
+#include "led_driver.h"
 #include "outgoing.h"
 #include "protocol.h"
 #include "routing.h"
 #include "scheduler.h"
 #include "sensor_timer.h"
+#include "time_interval.h"
 #include "reading_store.h"
 
-#include "../messaging_two/messages.h"
-#include "../messaging_two/reading_to_message.h"
+#include "messages.h"
+#include "reading_to_message.h"
 
 // One flag for each kind of message sent up: true while one is out and not answered yet
 static bool awaiting_handshake_ack = false;  // H
@@ -40,10 +42,17 @@ void handle_handshake(void)
 /**
  * @brief Handles a reading going out: turns it into the reading message and sends it.
  *
+ * Does nothing while an earlier reading is still waiting for its answer.
+ *
  * @param stored The stored reading to send
  */
 void handle_reading(const stored_reading_t *stored)
 {
+    // Checked first, so that a pass spent waiting for the answer stays short: turning the reading
+    // into text takes longer than one byte takes to arrive, and bytes of the answer would be lost
+    if (awaiting_reading_ack) {
+        return;
+    }
     char texts[PROTOCOL_FIELDS_READING][FORMAT_SIGNED_SIZE];
 
     reading_to_message(stored, &reading_message, texts);
@@ -137,10 +146,27 @@ void state_setter(void)
 }
 
 /**
+ * @brief Blinks the on-board LED to show the state: slowly when the state is ok, quickly when not.
+ *
+ * Call on every pass: the LED is toggled once its blink time has passed.
+ */
+void handle_led(void)
+{
+    static uint32_t last_toggle_ms = 0;
+    uint32_t blink_ms = (current_state == STATE_OK) ? LED_CONNECTED_BLINK_MS : LED_CONNECTING_BLINK_MS;
+
+    if (!time_interval_passed(now_ms, last_toggle_ms, blink_ms)) {
+        return;
+    }
+    last_toggle_ms = now_ms;
+    led_toggle();
+}
+
+/**
  * @brief Runs one pass of the main loop: the things done whatever the state is, then the state.
  *
- * Takes a reading if one is due and stores it, polls the UART, then runs the current state. Reads
- * no clock: it is handed the time.
+ * Takes a reading if one is due and stores it, polls the UART, runs the current state, then blinks
+ * the LED. Reads no clock: it is handed the time.
  *
  * @param time_ms The time now, as a reading of a millisecond counter such as HAL_GetTick()
  */
@@ -154,4 +180,5 @@ void run_pass(uint32_t time_ms)
     }
     poll_uart(now_ms, sent_ms, &current_state, &awaiting_handshake_ack, &awaiting_reading_ack, &awaiting_reply_ack);
     state_setter();
+    handle_led();
 }

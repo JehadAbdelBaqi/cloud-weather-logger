@@ -18,6 +18,7 @@
 #define LINK_RX_PIN  GPIO_PIN_10
 #define LINK_PIN_AF  GPIO_AF7_USART1
 #define LINK_BAUD    115200
+#define LINK_INTERRUPT_HANDLER USART1_IRQHandler  // the interrupt function of LINK_UART
 #define LINK_LINE_LIMIT 127  // longest line, in characters, not counting the '\n'
 
 // Debug output - USART2 TX on PA2, which the ST-LINK passes to the PC as a USB serial port

@@ -12,10 +12,13 @@
 /**
  * @brief Polls the UART for a message from the bridge and routes it by its letter.
  *
+ * A message whose letter has no route is ignored.
+ *
  * Does not wait: it returns straight away when no whole message has arrived yet. While nothing
- * has arrived, the wait is given up on once the quiet limit has passed since the message went
- * out: the state becomes no response and every awaiting flag is set to false, so messages can be
- * sent again.
+ * has arrived, the state becomes no response once the quiet limit has passed since the last
+ * message went out, and every awaiting flag is set to false, so messages can be sent again. That
+ * holds whether or not an answer was being waited for: a link that has been quiet for the limit
+ * is checked with a handshake.
  *
  * @param now_ms                 The time now
  * @param sent_ms                The time the message being answered went out
@@ -30,7 +33,7 @@ void poll_uart(uint32_t now_ms, uint32_t sent_ms, state_key_t *current_state,
     const char *text = link_read_line();
 
     if (text != NULL) {
-        incoming_routes[text[0]](text);
+        call_route(incoming_routes, text[0], text);
         return;
     }
     if (time_interval_passed(now_ms, sent_ms, HANDSHAKE_QUIET_LIMIT_MS)) {

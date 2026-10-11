@@ -2,9 +2,8 @@
 
 #include "board.h"
 #include "debug.h"
+#include "handlers.h"
 #include "sensor.h"
-#include "state_machine.h"
-#include "status.h"
 
 /**
  * @brief Stops the program after a setup step has failed. Never returns.
@@ -29,7 +28,6 @@ int main(void)
     sensor_init();
 
     while (1) {
-        state_machine_run();
-        status_poll();
+        run_pass(HAL_GetTick());
     }
 }

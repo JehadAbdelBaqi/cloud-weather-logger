@@ -19,6 +19,10 @@ extern const incoming_handler_t incoming_routes[INCOMING_ROUTES_SIZE];
 // response answers) sits at that letter's position
 extern const incoming_handler_t response_routes[INCOMING_ROUTES_SIZE];
 
+// Described in routing.c
+void call_route(const incoming_handler_t table[], char letter, const char *text);
+void response_router(const char *text);
+
 // The keys for the states: names for the positions in the state table
 typedef enum {
     STATE_OK,           // everything is answering

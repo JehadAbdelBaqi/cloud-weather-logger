@@ -15,6 +15,7 @@ void handle_incoming_command(const char *text);
 void handle_reply(void);
 void handle_reply_ack(const char *text);
 void state_setter(void);
+void handle_led(void);
 void run_pass(uint32_t time_ms);
 
 #endif
