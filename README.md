@@ -24,10 +24,12 @@ held in memory while offline, sent over MQTT to a Docker stack
 
 - **Samples** temperature, pressure and humidity on a timer, and on demand.
 - **Timestamps** every reading on the device from its real-time clock.
-- **Keeps every reading in memory** until the server confirms it is stored, then
-  resends anything missed — a short link, broker or database outage leaves no
-  gap. When the memory is full it stops taking readings until there is room.
-- **Takes commands** from the server over the same path the readings use.
+- **Keeps every reading in memory** until it is acknowledged, and sends again
+  anything that was not — a link or broker outage leaves no gap. Readings go
+  out one at a time, in order. When the memory is full it stops taking
+  readings until there is room.
+- **Takes commands** over the same path the readings use: list the commands,
+  take a reading now, change how often readings are taken.
 - **Graphs** the data in Grafana, and alerts when readings stop arriving.
 - **Deploys the same way everywhere** — one Ansible playbook and one release
   script for the local VM and for EC2.

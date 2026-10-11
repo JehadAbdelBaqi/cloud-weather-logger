@@ -31,13 +31,25 @@ folder named after its library, or `app/` for the application.
 
 ```
 test/
-  app/      test_line/                 building a protocol line, finding and copying its fields,
-                                       checking a word, reading a number
+  app/      test_message/              the handshake message, the reply message, a stored reading as
+                                       the reading message, a reading's values as text
+            test_incoming/             reading a response or a command, setting the state from a
+                                       status, removing an answered reading or reply
+            test_reading_store/        holding readings until they are removed: oldest first,
+                                       sequence numbers, a full store
+            test_reply_store/          holding replies until they are removed: oldest first, by ID,
+                                       a full store, an ID or result that does not fit
   bme280/   test_bme280_raw/           measurement bytes to raw values
             test_bme280_calibration/   calibration bytes to calibration values
             test_bme280_compensation/  raw values to real units
-  format/   test_format_number/        a number to decimal or hexadecimal text
+  format/   test_format_number/        a number to decimal or hexadecimal text, and decimal text to
+                                       a number
   link/     test_link_framing/         received bytes to a line
+            test_link_buffer/          holding received bytes until they are read
+  message/  test_message_build/        constructing a message from its letter and fields
+            test_message_fields/       filling a message's fields in, getting a field out of a message
+  ring/     test_ring_places/          which place holds the oldest item and which is free, going
+                                       round at the end
   time/     test_time_interval/        whether an interval has passed
 ```
 
@@ -47,7 +59,7 @@ test/
 |------|-----|
 | Drivers (`<module>_driver.c`) | They operate a device, so they only run on the board |
 | `link.c`, `debug.c` | They sit on a driver |
-| The rest of the application (`src/`) | It calls the HAL, the link and the debug output directly |
+| The rest of the application (`src/`) | It calls the HAL, the link, the sensor and the LED directly |
 
 ## How it works
 

@@ -38,8 +38,10 @@ What this project uses and how it is put together: the decisions made and still 
 - One script, `build.sh`, builds and uploads both boards; its steps are switched in `build-config.sh`
 - The bridge repository's test broker is the broker side until this project's server stack exists
 - A handshake between the Nucleo and the bridge before the link is used, and a watch on it afterwards
+- Only the Nucleo asks in the handshake; the bridge answers, and takes any line from the Nucleo as proof it is there
 - The Nucleo counts the connection as made only when the bridge answers the Nucleo's own request
-- Polled UART receive on the Nucleo
+- The bridge answers the handshake request with the same line type as any other line, and the result says whether it can reach Wi-Fi and the broker
+- Interrupt-driven UART receive on the Nucleo, into a buffer in memory
 
 ## The protocol
 
@@ -50,7 +52,12 @@ What this project uses and how it is put together: the decisions made and still 
 - Readings carry a sequence number and are acknowledged cumulatively
 - The time is sent down to the Nucleo to set its RTC
 - Commands and replies carry an ID
-- A `read` command produces a normal reading line
+- The first field of every line sent up is its sequence number or ID
+- The bridge answers a line with one line type, carrying that line's letter, its first field and the result
+- Every response to the Nucleo is that one line type, from the bridge or from the server; a command is the other kind of line it receives
+- A command is sent as a number, with its value as a field of its own
+- A reply is the answer itself; nothing is sent only to say a command arrived
+- A `read` command is answered with the reading, carrying the command's ID
 
 ## The Nucleo firmware
 
@@ -59,20 +66,35 @@ What this project uses and how it is put together: the decisions made and still 
 - Drivers and building blocks in `firmware/lib/`, application code in `firmware/src/app/`
 - The project's values in `firmware/include/config/`, the application's headers in `firmware/include/app/`
 - One folder per library; a file's name says whether it operates a device, does one job with no hardware, or sits on a driver
-- Number-to-text conversion in one library, `format`
+- Number-to-text and text-to-number conversion in one library, `format`
 - Every pin assignment in `board_config.h`; the libraries are given their pins when they are set up
 - Tunable values in `config.h`
 - The protocol's line types and fixed words in `protocol.h`
-- The commands in a table of words and the functions that carry them out
+- The commands in a table, with the function for each at its number's position, beside the other route tables
 - The MQTT topics in `topic_routes.h`
 - A value is defined once; the bridge is handed its settings in `bridge_config.h`, filled from the project's own definitions
-- One set of link settings and handshake timings for both boards
-- The code for lines to and from the bridge in `src/app/messaging/`: one handler for each line type, built from shared functions
-- Building a line and finding its fields in one hardware-free file, tested on the PC
+- One set of link settings and timings for both boards
+- One function is one pass of the main loop: the jobs done in every state, then the function of the state the Nucleo is in
+- What lasts from one pass to the next is one struct, declared in `main.c` and handed to every function that needs it
+- The sensor code in `src/app/sensor/`: it only measures, and hands each reading back to its caller
+- Building a message, and getting a field out of one, in one library, `message`, which is handed the field separator
+- This project's messages in `src/app/messaging/`; deciding what is sent, and handling what arrives, in `src/app/operations/`
+- An incoming message routed by its first letter, and a response then by its second, through tables in one file
+- The status of a response sets the state the Nucleo is in
+- A message built by one function from a description of its type, with every field already text
 - The internal 16 MHz oscillator as the system clock
 - The datasheet's integer formulas for the BME280 compensation
 - Readings are timestamped on the Nucleo, with a stand-in time until the RTC is set up
-- Readings are held in memory while there is no connection
+- Readings are put into a store in memory and sent from there, one at a time, each staying until it is acknowledged
+- One message is out at a time, whatever its kind: the next is sent once the one before is answered
+- A reading's sequence number and time are given when it is stored
+- The stores in `src/app/stores/`: one for readings and one for replies to commands, each built on the `ring` library
+- A reply to a command is put into its store and sent from there, staying until it is acknowledged
+- A waiting reply is sent ahead of the waiting readings
+- The bridge answers every line: an acknowledgement once the broker has it, or a report that it has not gone through
+- The bridge reports the state of its connection upstream
+- A line the bridge does not answer in time sends the Nucleo back to the handshake
+- One quiet limit for the link: it decides when an answer is given up on and when a quiet link is checked
 - Store-and-forward driven by acknowledgements
 - The sequence number starts again at power-on
 - Unit tests on the PC, for the code that touches no hardware, written alongside new logic
