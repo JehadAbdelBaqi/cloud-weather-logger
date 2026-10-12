@@ -5,7 +5,7 @@ cloud environments differ.
 
 [← README](../../README.md)
 
-> **Built in `v0.1.0`:** the Nucleo, the bridge and everything between the
+> **Built:** the Nucleo, the bridge and everything between the
 > Nucleo and the broker. **Planned, not built:** everything past the broker
 > (ingest, InfluxDB, Grafana), the server it runs on, and the cloud. Each
 > planned part below is marked.
@@ -13,7 +13,7 @@ cloud environments differ.
 ## Data flow
 
 ```
-                    built in v0.1.0                  │       planned
+                    built                            │       planned
                                                      │
  UP    Nucleo ─UART─► bridge ─MQTT─► broker ─────────┼─► ingest ─► InfluxDB ─► Grafana
        readings (W), command replies (R)             │
@@ -49,7 +49,7 @@ its UART lines to and from MQTT over Wi-Fi/TLS.
   at changes.
 - **It runs the `uart-mqtt-bridge` firmware**, a separate general-purpose
   project in its own repository. This repository holds only the bridge's
-  config, and names the bridge version it is built with: `v0.2.0`. The
+  config, and names the bridge version it is built with: `v0.2.1`. The
   certificates are made by the bridge's own scripts.
 - **It routes each line by its first letter** and never changes a line, and it
   answers every line the Nucleo sends with what became of it.

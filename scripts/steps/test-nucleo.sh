@@ -29,14 +29,14 @@ cd "$BRIDGE_REPO/scripts"
 # shellcheck source=/dev/null
 source helpers/settings.sh
 # shellcheck source=/dev/null
-source "$NETWORK_HELPERS"
+source helpers/network-helpers.sh
 # shellcheck source=/dev/null
 source helpers/bridge-test.sh
 # shellcheck source=/dev/null
 source helpers/report.sh
 
 # 2. Where the broker is, the topics, and the values the firmware is built with
-find_lan_address "$LAN_ADAPTER"
+find_lan_address
 READINGS_TOPIC="$(topic_from_header "$TOPICS_HEADER" TOPIC_READINGS)"
 REPLIES_TOPIC="$(topic_from_header "$TOPICS_HEADER" TOPIC_REPLIES)"
 COMMANDS_TOPIC="$(topic_from_header "$TOPICS_HEADER" TOPIC_COMMANDS)"
@@ -65,7 +65,7 @@ report_run "test: reading interval and order" check_reading_interval "$PROJECT_N
 
 # 7. Readings are kept while the broker is stopped, and arrive in order once it is back.
 # This stops the broker in the VM for a while, and starts it again
-# shellcheck disable=SC2153  # MULTIPASS and VM_NAME come from the bridge's settings
-report_run "test: kept while broker stopped" check_readings_kept_while_broker_stopped "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$READINGS_TOPIC" "$READ_INTERVAL_MS" "$MULTIPASS" "$VM_NAME"
+# shellcheck disable=SC2153  # VM_NAME comes from the bridge's settings
+report_run "test: kept while broker stopped" check_readings_kept_while_broker_stopped "$PROJECT_NAME" "$LAN_ADDRESS" "$BROKER_PORT" "$READINGS_TOPIC" "$READ_INTERVAL_MS" "$VM_NAME"
 
 echo "Nucleo test passed."
