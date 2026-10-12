@@ -1,6 +1,6 @@
 # Risks and Limits
 
-What can go wrong with the device as it stands in `v0.1.0`, and what is done about each.
+What can go wrong with the device as it stands, and what is done about each.
 
 [← README](../../README.md)
 
@@ -38,4 +38,4 @@ them.
 
 ## See also
 
-[firmware.md](../system/firmware.md) · [protocol.md](../system/protocol.md) · [decision_logs.md](decision_logs.md) · the bridge's own risks, in its repository: [risks.md](https://github.com/JehadAbdelBaqi/uart-mqtt-bridge/blob/v0.2.0/docs/project-design/risks.md)
+[firmware.md](../system/firmware.md) · [protocol.md](../system/protocol.md) · [decision_logs.md](decision_logs.md) · the bridge's own risks, in its repository: [risks.md](https://github.com/JehadAbdelBaqi/uart-mqtt-bridge/blob/v0.2.1/docs/project-design/risks.md)

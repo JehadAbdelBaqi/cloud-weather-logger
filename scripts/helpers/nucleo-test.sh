@@ -276,11 +276,10 @@ check_reading_interval() {
 # meanwhile then all arrive, oldest first, carrying on from the last one delivered before the stop.
 # The broker is started again before anything is checked.
 # Arguments: <project name> <address> <port> <readings topic>
-#            <interval the firmware is built with, in milliseconds> <multipass command> <vm name>
+#            <interval the firmware is built with, in milliseconds> <vm name>
 check_readings_kept_while_broker_stopped() {
     local interval_s=$(($5 / 1000))
-    local multipass="$6"
-    local vm_name="$7"
+    local vm_name="$6"
     local missed=2
     local stopped_s=$((interval_s * missed))
     local count=$((missed + 1))
@@ -298,9 +297,9 @@ check_readings_kept_while_broker_stopped() {
 
     # 2. Stop the broker for long enough that several readings are taken, then start it again
     echo "Stopping the broker for $stopped_s s..."
-    "$multipass" exec "$vm_name" -- sudo systemctl stop mosquitto
+    multipass exec "$vm_name" -- sudo systemctl stop mosquitto
     sleep "$stopped_s"
-    "$multipass" exec "$vm_name" -- sudo systemctl start mosquitto
+    multipass exec "$vm_name" -- sudo systemctl start mosquitto
     echo "Broker started again."
 
     # 3. Listen as soon as the broker is up, before the bridge has connected to it again

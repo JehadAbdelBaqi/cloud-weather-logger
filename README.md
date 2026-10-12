@@ -5,14 +5,14 @@ humidity from a BME280 and sends each reading over MQTT, holding it in memory
 until it is acknowledged. The full project carries those readings on to a
 server that stores and graphs them, on a local machine or in the cloud.
 
-**Version `v0.1.0`: the device side.** The Nucleo, the sensor and the link to
+**Version `v0.1.1`: the device side.** The Nucleo, the sensor and the link to
 an MQTT broker work and are tested on the boards. The server and the cloud are
 planned and not built yet.
 
 ## Where it stands
 
-| Works in `v0.1.0` | Planned |
-|-------------------|---------|
+| Works now | Planned |
+|-----------|---------|
 | Readings taken on a timer and sent to an MQTT broker | The real time on each reading, from the board's clock |
 | Every reading held in memory until it is acknowledged, and sent again if it was not | A server that takes the readings in: ingest, InfluxDB, Grafana |
 | Commands taken over the same path: list the commands, take a reading now, change the rate | A local virtual machine as the server, set up by Ansible |
@@ -22,7 +22,7 @@ planned and not built yet.
 ## Overview
 
 ```
-                      works in v0.1.0                          │        planned
+                      works now                                │        planned
                                                                │
  [BME280] ─I2C─┐                                               │
                ▼                                               │
@@ -36,9 +36,9 @@ planned and not built yet.
 
 The Wi-Fi bridge is a second board with firmware of its own,
 [uart-mqtt-bridge](https://github.com/JehadAbdelBaqi/uart-mqtt-bridge). This
-release is built with its `v0.2.0`.
+release is built with its `v0.2.1`.
 
-## What `v0.1.0` does
+## What it does now
 
 - **Samples** temperature, pressure and humidity on a timer.
 - **Keeps every reading in memory** until the broker has it, and sends again
@@ -88,9 +88,9 @@ It runs on Linux.
 | Two USB cables | One to each board: power, uploading, the serial output |
 | A 2.4 GHz Wi-Fi network, with the PC on it | The bridge's route to the broker |
 
-The software is PlatformIO, Multipass, `openssl`, `ssh`, `iptables` and
-`mosquitto-clients`. The list with versions is the bridge's:
-[resources.md](https://github.com/JehadAbdelBaqi/uart-mqtt-bridge/blob/v0.2.0/docs/system/resources.md).
+The software is PlatformIO, Multipass, Ansible, `openssl`, `ssh`, `iptables`
+and `mosquitto-clients`. The list with versions is the bridge's:
+[resources.md](https://github.com/JehadAbdelBaqi/uart-mqtt-bridge/blob/v0.2.1/docs/system/resources.md).
 
 ### Wiring
 
@@ -119,7 +119,7 @@ Every pin is set in `firmware/include/config/board_config.h`.
    release is built with:
    ```
    git clone https://github.com/JehadAbdelBaqi/uart-mqtt-bridge.git
-   git -C uart-mqtt-bridge checkout v0.2.0
+   git -C uart-mqtt-bridge checkout v0.2.1
    ```
    The two folders have to sit in the same folder: the build reaches the
    bridge at `../uart-mqtt-bridge`.
@@ -131,8 +131,9 @@ Every pin is set in `firmware/include/config/board_config.h`.
    ```
 
 That one command runs the firmware's unit tests on the PC, builds and uploads
-the Nucleo, creates the test broker, builds and uploads the bridge with this
-project's config, and then tests both boards running. It asks for the `sudo`
+the Nucleo, creates the test broker's virtual machine and sets the broker up
+in it with Ansible, builds and uploads the bridge with this project's config,
+and then tests both boards running. It asks for the `sudo`
 password once, for the rule that lets the bridge reach the broker. It ends
 with a report:
 
@@ -140,17 +141,19 @@ with a report:
 ---------------- Report ----------------
  1. unit-tests                         success
  2. build-and-upload-nucleo            success
- 3. bridge: create-vm                  success
- 4. bridge: setup-certs                success
- 5. bridge: set-port-rule              success
- 6. bridge: build-and-upload           success
- 7. test: readings arrive              success
- 8. test: commands answered            success
- 9. test: rate changes the timing      success
-10. test: reading interval and order   success
-11. test: kept while broker stopped    success
-12. test: Nucleo lost and regained     success
-13. test: kept while bridge restarts   success
+ 3. bridge: create-ssh-key             success
+ 4. bridge: create-vm                  success
+ 5. bridge: setup-certs                success
+ 6. bridge: setup-broker               success
+ 7. bridge: set-port-rule              success
+ 8. bridge: build-and-upload           success
+ 9. test: readings arrive              success
+10. test: commands answered            success
+11. test: rate changes the timing      success
+12. test: reading interval and order   success
+13. test: kept while broker stopped    success
+14. test: Nucleo lost and regained     success
+15. test: kept while bridge restarts   success
 ```
 
 Which steps run is set in `scripts/build-config.sh`, each with a switch in
@@ -204,7 +207,7 @@ The bridge has an LED of its own, described in its README.
 
 ## Components
 
-**In `v0.1.0`:**
+**Built:**
 
 | Component | Job |
 |-----------|-----|

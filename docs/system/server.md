@@ -5,7 +5,7 @@ runs on it.
 
 [← README](../../README.md)
 
-> **Planned, not built.** Nothing on this page exists in `v0.1.0`. It is the design the
+> **Planned, not built.** Nothing on this page exists yet. It is the design the
 > project is being built towards, and it may change before it is built.
 
 ## Stack

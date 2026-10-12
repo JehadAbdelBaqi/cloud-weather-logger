@@ -39,14 +39,14 @@ cd "$BRIDGE_REPO/scripts"
 # shellcheck source=/dev/null
 source helpers/settings.sh
 # shellcheck source=/dev/null
-source "$NETWORK_HELPERS"
+source helpers/network-helpers.sh
 # shellcheck source=/dev/null
 source helpers/bridge-test.sh
 # shellcheck source=/dev/null
 source helpers/report.sh
 
 # 2. Where the broker and the bridge are, the topic, and the values the firmware is built with
-find_lan_address "$LAN_ADAPTER"
+find_lan_address
 READINGS_TOPIC="$(topic_from_header "$TOPICS_HEADER" TOPIC_READINGS)"
 BRIDGE_PORT="$(serial_port "$BRIDGE_PORT_WORD")"
 ACK_QUIET_LIMIT_MS="$(number_from_header "$CONFIG_HEADER" ACK_QUIET_LIMIT_MS)"

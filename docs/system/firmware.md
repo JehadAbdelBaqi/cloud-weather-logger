@@ -5,7 +5,7 @@ PlatformIO (`framework = stm32cube`).
 
 [← README](../../README.md)
 
-> **Built in `v0.1.0`:** everything on this page, apart from the real time on a
+> **Built:** everything on this page, apart from the real time on a
 > reading and the test in CI, which are marked as planned.
 
 ## Peripherals
@@ -335,7 +335,7 @@ is renumbered when they are sent later.
 
 ## Time
 
-**In `v0.1.0` the time on a reading is a stand-in:** a fixed starting time,
+**For now the time on a reading is a stand-in:** a fixed starting time,
 `READING_TIME_START` in `config.h`, plus the seconds since the Nucleo was
 switched on. It counts up one second per second and starts again at every
 power-on. A reading is given its time when it is taken, so readings sent late
@@ -351,7 +351,7 @@ or sent again keep their order and their spacing.
 ## Commands
 
 `help`, `read` and `rate` — arriving as `C` lines through the broker and the
-bridge, and each answered with an `R` line. In `v0.1.0` they are published to
+bridge, and each answered with an `R` line. For now they are published to
 the broker by hand or by the tests; the server that will send them is planned. Formats and replies
 in [protocol.md](protocol.md#c--r--commands-and-replies).
 

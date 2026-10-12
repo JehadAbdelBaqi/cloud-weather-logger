@@ -7,8 +7,8 @@ The bridge routes each line by its first letter.
 
 ## Line types
 
-| Line | Direction | Meaning | In `v0.1.0` |
-|------|-----------|---------|-------------|
+| Line | Direction | Meaning | State |
+|------|-----------|---------|-------|
 | `W,<seq>,<epoch>,<t_centi_C>,<p_Pa>,<rh_centi_pct>` | up | A reading | Built |
 | `R,<id>,<result>` | up | Reply to a command | Built |
 | `L,<letter>,<first field>,<status>` | down | A response to a line the Nucleo sent up | Built, for the bridge's responses |
@@ -104,7 +104,7 @@ InfluxDB.
 
 ## `T` — time
 
-> **Planned, not built.** In `v0.1.0` the time on a reading is a stand-in (see
+> **Planned, not built.** For now the time on a reading is a stand-in (see
 > [`W`](#w--reading)). The form below is the first design: it is to become a
 > response of the `L` kind, `L,T`, and where the time comes from is not
 > decided.
